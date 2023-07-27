@@ -50,6 +50,7 @@
   (load_all_models :bool)
   (open_jtalk_dict_dir (:pointer :char)))
 
+(cffi:defcfun ("voicevox_make_default_initialize_options" vv-make-default-initialize-options) (:struct voicevox-initialize-options))
 
 (cffi:defcfun ("voicevox_initialize" vv-initialize) :int
   "initialize for voicevox core"
@@ -75,17 +76,15 @@
       (cffi:foreign-string-free open-jtalk-dict-dir-path-c)
       error-status)))
 
-
-(cffi:defcfun ("voicevox_make_default_initialize_options" vv-make-default-initialize-options) (:struct voicevox-initialize-options))
-
 (cffi:defcfun ("voicevox_is_gpu_mode" vv-is-gpu-mode) :bool)
+(declaim (ftype (function () (values boolean &optional)) is-gpu-mode))
 (defun is-gpu-mode ()
   (vv-is-gpu-mode))
 
 (cffi:defcfun ("voicevox_get_version" vv-get-version) :string)
+(declaim (ftype (function () (values string &optional)) get-version))
 (defun get-version ()
   (vv-get-version))
-
 
 (cffi:defcfun ("voicevox_audio_query" vv-audio-query) :int
   "Do audio query"
@@ -183,7 +182,6 @@
        out-wav-bytes)
       (cffi:foreign-string-free text-c)
       (list :error-status error-status :wav-length wav-length-unrefed :wav-bytes wav-bytes-array))))
-
 
 
 (defun load-library (path)
