@@ -1,4 +1,4 @@
-(defsystem "unonfficial-voicevox-core-wrapper-cl-types"
+(defsystem "unofficial-voicevox-core-wrapper-cl-types"
   :version "0.0.1"
   :author "madosuki"
   :license "MIT"
