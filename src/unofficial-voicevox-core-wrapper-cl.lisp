@@ -2,9 +2,9 @@
 (defpackage unofficial-voicevox-core-wrapper-cl
   (:use :cl :cffi :unofficial-voicevox-core-wrapper-cl.types)
   (:export
-   ;; :initialize
-   ;; :generate-wav
-   ;; :generate-audio-query
+   :initialize
+   :generate-wav
+   :generate-audio-query
    :load-library
    ))
 (in-package :unofficial-voicevox-core-wrapper-cl)
