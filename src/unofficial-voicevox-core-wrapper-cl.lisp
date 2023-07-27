@@ -1,6 +1,11 @@
 (in-package :cl-user)
 (defpackage unofficial-voicevox-core-wrapper-cl
-  (:use :cl :cffi :unofficial-voicevox-core-wrapper-cl.types)
+  (:use :cl :cffi)
+  (:import-from :unofficial-voicevox-core-wrapper-cl.types
+                :uint32
+                :uint16
+                :voicevox-result-code-type
+                :voicevox-acceleration-mode-type)
   (:export
    :initialize
    :generate-wav
@@ -8,6 +13,41 @@
    :load-library
    ))
 (in-package :unofficial-voicevox-core-wrapper-cl)
+
+(cffi:defcenum voicevox-result-code
+  (:voicevox-result-ok 0)
+  (:voicevox-result-not-loaded-openjtalk-dict-error 1)
+  (:voicevox-result-load-model-error 2)
+  (:voicevox-result-get-supported-device-error 3)
+  (:voicevox-result-gpu-support-error 4)
+  (:voicevox-result-load-metas-error 5)
+  (:voicevox-result-uninitialized-status-error 6)
+  (:voicevox-result-invalid-speaker-id-error 7)
+  (:voicevox-result-invalid-model-index-error 8)
+  (:voicevox-result-inference-error 9)
+  (:voicevox-result-extract-full-context-label-error 10)
+  (:voicevox-result-invalid-utf8-input-error 11)
+  (:voicevox-result-parse-kana-error 12)
+  (:voicevox-result-invalid-audio-query-error 13))
+
+(cffi:defcenum voicevox-acceleration-mode-enum
+  (:voicevox-acceleration-mode-auto 0)
+  (:voicevox-acceleration-mode-cpu 1)
+  (:voicevox-acceleration-mode-gpu 2))
+
+(cffi:defcstruct voicevox-audio-query-options
+  (kana :int))
+
+(cffi:defcstruct voicevox-tts-options
+  (kana :bool)
+  (enable-interrogative-upspeak :bool))
+
+(cffi:defcstruct voicevox-initialize-options
+  (acceleration_mode voicevox-acceleration-mode-enum)
+  (cpu_num_threads :uint16)
+  (load_all_models :bool)
+  (open_jtalk_dict_dir (:pointer :char)))
+
 
 (cffi:defcfun ("voicevox_initialize" vv-initialize) :int
   "initialize for voicevox core"
@@ -114,6 +154,7 @@
        out-wav-bytes)
       (cffi:foreign-string-free text-c)
       (list :error-status error-status :wav-length wav-length-unrefed :wav-bytes wav-bytes-array))))
+
 
 (declaim (ftype (function (&key (:acceleration-mode voicevox-acceleration-mode-type)
                                 (:cpu-num-threads uint16)
