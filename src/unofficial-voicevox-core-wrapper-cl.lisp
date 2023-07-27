@@ -11,6 +11,8 @@
    :generate-wav
    :generate-audio-query
    :load-library
+   :get-version
+   :is-gpu-mode
    ))
 (in-package :unofficial-voicevox-core-wrapper-cl)
 
@@ -52,11 +54,38 @@
 (cffi:defcfun ("voicevox_initialize" vv-initialize) :int
   "initialize for voicevox core"
   (options (:struct voicevox-initialize-options)))
+(declaim (ftype (function (&key (:acceleration-mode voicevox-acceleration-mode-type)
+                                (:cpu-num-threads uint16)
+                                (:load-all-models boolean)
+                                (:open-jtalk-dict-dir string))
+                          (values voicevox-result-code-type &optional))
+                initialize))
+(defun initialize (&key acceleration-mode cpu-num-threads load-all-models open-jtalk-dict-dir)
+  (let ((options-ini (cffi:foreign-alloc '(:struct voicevox-initialize-options)))
+        (open-jtalk-dict-dir-path-c (cffi:foreign-string-alloc open-jtalk-dict-dir
+                                                               :encoding :UTF-8)))
+    (setf (cffi:foreign-slot-value options-ini '(:struct voicevox-initialize-options) 'acceleration_mode) acceleration-mode
+          (cffi:foreign-slot-value options-ini '(:struct voicevox-initialize-options) 'cpu_num_threads) cpu-num-threads
+          (cffi:foreign-slot-value options-ini '(:struct voicevox-initialize-options) 'load_all_models) load-all-models
+          (cffi:foreign-slot-value options-ini '(:struct voicevox-initialize-options) 'open_jtalk_dict_dir) open-jtalk-dict-dir-path-c)
+    (let ((error-status
+            (get-error-from-code (vv-initialize (cffi:mem-aref options-ini '(:struct voicevox-initialize-options))))))
+      (free-for-foreign
+       options-ini)
+      (cffi:foreign-string-free open-jtalk-dict-dir-path-c)
+      error-status)))
+
 
 (cffi:defcfun ("voicevox_make_default_initialize_options" vv-make-default-initialize-options) (:struct voicevox-initialize-options))
 
 (cffi:defcfun ("voicevox_is_gpu_mode" vv-is-gpu-mode) :bool)
+(defun is-gpu-mode ()
+  (vv-is-gpu-mode))
+
 (cffi:defcfun ("voicevox_get_version" vv-get-version) :string)
+(defun get-version ()
+  (vv-get-version))
+
 
 (cffi:defcfun ("voicevox_audio_query" vv-audio-query) :int
   "Do audio query"
@@ -156,37 +185,7 @@
       (list :error-status error-status :wav-length wav-length-unrefed :wav-bytes wav-bytes-array))))
 
 
-(declaim (ftype (function (&key (:acceleration-mode voicevox-acceleration-mode-type)
-                                (:cpu-num-threads uint16)
-                                (:load-all-models boolean)
-                                (:open-jtalk-dict-dir string))
-                          (values voicevox-result-code-type &optional))
-                initialize))
-(defun initialize (&key acceleration-mode cpu-num-threads load-all-models open-jtalk-dict-dir)
-  (let ((options-ini (cffi:foreign-alloc '(:struct voicevox-initialize-options)))
-        (open-jtalk-dict-dir-path-c (cffi:foreign-string-alloc open-jtalk-dict-dir
-                                                               :encoding :UTF-8)))
-    (setf (cffi:foreign-slot-value options-ini '(:struct voicevox-initialize-options) 'acceleration_mode) acceleration-mode
-          (cffi:foreign-slot-value options-ini '(:struct voicevox-initialize-options) 'cpu_num_threads) cpu-num-threads
-          (cffi:foreign-slot-value options-ini '(:struct voicevox-initialize-options) 'load_all_models) load-all-models
-          (cffi:foreign-slot-value options-ini '(:struct voicevox-initialize-options) 'open_jtalk_dict_dir) open-jtalk-dict-dir-path-c)
-    (let ((error-status
-            (get-error-from-code (vv-initialize (cffi:mem-aref options-ini '(:struct voicevox-initialize-options))))))
-      (free-for-foreign
-       options-ini)
-      (cffi:foreign-string-free open-jtalk-dict-dir-path-c)
-      error-status)))
 
 (defun load-library (path)
   (cffi:load-foreign-library path))
-
-;; (defun write-wav-file (&key filepath wav-bytes wav-length)
-;;   (with-open-file (stream filepath
-;;                           :direction :output
-;;                           :if-exists :supersede
-;;                           :element-type 'unsigned-byte)
-;;     (dotimes (n wav-length)
-;;       (let ((byte (aref wav-bytes n)))
-;;         (when byte
-;;           (write-byte byte stream))))))
 
