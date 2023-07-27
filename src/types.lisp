@@ -1,11 +1,9 @@
 (in-package :cl-user)
 (defpackage unofficial-voicevox-core-wrapper-cl.types
-  (:use :cl)
-  (:import-from :cffi
-                :cffi-libffi)
+  (:use :cl :cffi)
   (:export :uint16
            :uint32
-           :voicevox-initilize-options
+           :voicevox-initialize-options
            :voicevox-audio-query-options
            :voicevox-tts-options
            :voicevox-result-code
@@ -18,14 +16,14 @@
 (deftype uint32 () '(integer 0 4294967295))
 
 (cffi:defcenum voicevox-acceleration-mode
-    (:voicevox-acceleration-mode-auto 0)
+  (:voicevox-acceleration-mode-auto 0)
   (:voicevox-acceleration-mode-cpu 1)
   (:voicevox-acceleration-mode-gpu 2))
 (deftype voicevox-acceleration-mode-type ()
   '(member :voicevox-acceleration-mode-auto :voicevox-acceleration-mode-cpu :voicevox-acceleration-mode-gpu))
 
 (cffi:defcenum voicevox-result-code
-    (:voicevox-result-ok 0)
+  (:voicevox-result-ok 0)
   (:voicevox-result-not-loaded-openjtalk-dict-error 1)
   (:voicevox-result-load-model-error 2)
   (:voicevox-result-get-supported-device-error 3)
@@ -57,7 +55,7 @@
     :voicevox-result-invalid-audio-query-error))
 
 (cffi:defcstruct voicevox-initialize-options
-    (acceleration_mode voicevox-acceleration-mode)
+  (acceleration_mode voicevox-acceleration-mode)
   (cpu_num_threads :uint16)
   (load_all_models :bool)
   (open_jtalk_dict_dir (:pointer :char)))

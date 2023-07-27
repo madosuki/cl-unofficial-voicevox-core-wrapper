@@ -1,14 +1,12 @@
 (in-package :cl-user)
 (defpackage unofficial-voicevox-core-wrapper-cl
-  (:use :cl)
-  (:import-from :cffi
-                :cffi-libffi
-                :jonathan
-                :unofficial-voicevox-core-wrapper-cl.types)
-  (:export :initialize
-           :generate-wav
-           :generate-audio-query
-           :load-library))
+  (:use :cl :cffi :unofficial-voicevox-core-wrapper-cl.types)
+  (:export
+   ;; :initialize
+   ;; :generate-wav
+   ;; :generate-audio-query
+   :load-library
+   ))
 (in-package :unofficial-voicevox-core-wrapper-cl)
 
 (cffi:defcfun ("voicevox_initialize" vv-initialize) :int
@@ -141,13 +139,13 @@
 (defun load-library (path)
   (cffi:load-foreign-library path))
 
-(defun write-wav-file (&key filepath wav-bytes wav-length)
-  (with-open-file (stream filepath
-                          :direction :output
-                          :if-exists :supersede
-                          :element-type 'unsigned-byte)
-    (dotimes (n wav-length)
-      (let ((byte (aref wav-bytes n)))
-        (when byte
-          (write-byte byte stream))))))
+;; (defun write-wav-file (&key filepath wav-bytes wav-length)
+;;   (with-open-file (stream filepath
+;;                           :direction :output
+;;                           :if-exists :supersede
+;;                           :element-type 'unsigned-byte)
+;;     (dotimes (n wav-length)
+;;       (let ((byte (aref wav-bytes n)))
+;;         (when byte
+;;           (write-byte byte stream))))))
 
