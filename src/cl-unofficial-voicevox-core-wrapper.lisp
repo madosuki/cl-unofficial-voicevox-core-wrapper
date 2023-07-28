@@ -226,20 +226,68 @@
                                                          '(:pointer (:pointer :float))
                                                          0))
             (list :result-status result-status
-                  :output-predicet-duration-data-length output-predict-durarion-data-length-unref
-                  :output-predicet-duration-data output-predict-durarion-data-lisp-array))
+                  :predict-duration-data-length output-predict-durarion-data-length-unref
+                  :predict-duration-data output-predict-durarion-data-lisp-array))
           (list :result-status result-status)))))
 
-;; (defcfun ("voicevox_predict_intonation_data_free" vv-predict-intonation-data-free) :void
-;;   (predict-intonation-data (:pointer :float)))
-;; (defcfun ("voicevox_predict_intonation" vv-predict-intonation) :int
-;;   (length :uintptr)
-;;   (vowel-phoneme-vector (:pointer :int64))
-;;   (consonant-phoneme-vector (:pointer :int64))
-;;   (start-accent-vector (:pointer :int64))
-;;   (end-accent-vector (:pointer :int64))
-;;   (start-accent-phrase-vector (:pointer :int64))
-;;   (end-accent-phrase-vector (:pointer :int64))
-;;   (speaker-id :uint32)
-;;   (output-predict-intonation-data-length :uintptr)
-;;   (output-predict-intonation-data (:pointer (:pointer :float))))
+(defcfun ("voicevox_predict_intonation_data_free" vv-predict-intonation-data-free) :void
+  (predict-intonation-data (:pointer :float)))
+(defcfun ("voicevox_predict_intonation" vv-predict-intonation) :int
+  (length :uintptr)
+  (vowel-phoneme-vector (:pointer :int64))
+  (consonant-phoneme-vector (:pointer :int64))
+  (start-accent-vector (:pointer :int64))
+  (end-accent-vector (:pointer :int64))
+  (start-accent-phrase-vector (:pointer :int64))
+  (end-accent-phrase-vector (:pointer :int64))
+  (speaker-id :uint32)
+  (output-predict-intonation-data-length :uintptr)
+  (output-predict-intonation-data (:pointer (:pointer :float))))
+(defun predict-intonation (length
+                           vowel-phoneme-vector
+                           consonant-phoneme-vector
+                           start-accent-vector
+                           end-accent-vector
+                           start-accent-phrase-vector
+                           end-accent-phrase-vector
+                           speaker-id)
+  (cffi:with-foreign-objects ((c-vowel-phoneme-vector '(:pointer :int64) length)
+                              (c-consonant-phoneme-vector '(:pointer :int64) length)
+                              (c-start-accent-vector '(:pointer :int64) length)
+                              (c-end-accent-vector '(:pointer :int64) length)
+                              (c-start-accent-phrase-vector '(:pointer :int64) length)
+                              (c-end-accent-phrase-vector '(:pointer :int64) length)
+                              (output-predict-intonation-data-length :uintptr)
+                              (output-predict-intonation-data '(:pointer (:pointer :float))))
+    (loop for i from 0 below length
+          do (setf
+              (cffi:mem-aref c-vowel-phoneme-vector '(:pointer :int64) i) (aref vowel-phoneme-vector i)
+              (cffi:mem-aref c-consonant-phoneme-vector '(:pointer :int64) i) (aref consonant-phoneme-vector i)
+              (cffi:mem-aref c-start-accent-vector '(:pointer :int64) i) (aref start-accent-vector i)
+              (cffi:mem-aref c-end-accent-vector '(:pointer :int64) i) (aref end-accent-vector i)
+              (cffi:mem-aref c-start-accent-phrase-vector '(:pointer :int64) i) (aref start-accent-phrase-vector i)
+              (cffi:mem-aref c-end-accent-phrase-vector '(:pointer :int64) i) (aref end-accent-phrase-vector i)))
+    (let ((result-status
+            (get-result-from-code
+             (vv-predict-intonation
+              length
+              c-vowel-phoneme-vector
+              c-consonant-phoneme-vector
+              c-start-accent-vector
+              c-end-accent-vector
+              c-start-accent-phrase-vector
+              c-end-accent-phrase-vector
+              output-predict-intonation-data-length
+              output-predict-intonation-data))))
+      (if (eq result-status :voicevox-result-ok)
+          (let* ((output-predict-intonation-data-length-unref (cffi:mem-ref output-predict-intonation-data-length :uintptr))
+                 (predict-intonation-data-lisp-array (make-array-from-pointer
+                                           output-predict-intonation-data
+                                           output-predict-intonation-data-length-unref
+                                           '(:pointer (:pointer :float))
+                                           :float)))
+            (vv-predict-intonation-data-free (cffi:mem-aref output-predict-intonation-data '(:pointer (:pointer :float))))
+            (list :result-status result-status
+                  :predict-intonation-data predict-intonation-data-lisp-array
+                  :predict-intonation-data-length output-predict-intonation-data-length-unref))
+          (list :result-status result-status)))))
