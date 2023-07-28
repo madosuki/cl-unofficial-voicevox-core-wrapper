@@ -50,6 +50,9 @@
   (:voicevox-acceleration-mode-cpu 1)
   (:voicevox-acceleration-mode-gpu 2))
 
+(defcfun ("voicevox_error_result_to_message" vv-error-result-to-message) :string
+  (result-code voicevox-result-code))
+
 (declaim (inline get-result-from-code))
 (defun get-result-from-code (code)
   (cffi:foreign-enum-keyword 'voicevox-result-code code))
@@ -66,7 +69,7 @@
 (cffi:defcfun ("voicevox_make_default_synthesis_options" vv-make-default-synthesis-options) (:struct voicevox-synthesis-options))
 
 (cffi:defcstruct voicevox-initialize-options
-    (acceleration_mode voicevox-acceleration-mode-enum)
+  (acceleration_mode voicevox-acceleration-mode-enum)
   (cpu_num_threads :uint16)
   (load_all_models :bool)
   (open_jtalk_dict_dir (:pointer :char)))
@@ -378,3 +381,4 @@
                     :wav-length output-wav-length-unref
                     :wav-bytes output-wav-lisp-array ))
             (list :result-status result-status))))))
+
