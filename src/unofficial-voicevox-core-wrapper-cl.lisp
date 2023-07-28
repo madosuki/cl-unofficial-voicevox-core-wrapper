@@ -9,12 +9,20 @@
    :voicevox-result-code-type
    :voicevox-acceleration-mode-type)
   (:export
+   :voicevox-result-code-type
+   :voicevox-acceleration-mode-type
    #:initialize
    #:generate-wav
    #:generate-audio-query
    #:load-library
+   #:load-model
    #:get-version
-   #:is-gpu-mode))
+   #:is-gpu-mode
+   #:load-model
+   #:is-model-loaded
+   #:finalize
+   #:get-supported-version
+   #:get-metas-json))
 (in-package :unofficial-voicevox-core-wrapper-cl)
 
 (cffi:defcenum voicevox-result-code
@@ -38,8 +46,12 @@
   (:voicevox-acceleration-mode-cpu 1)
   (:voicevox-acceleration-mode-gpu 2))
 
+(declaim (inline get-result-from-code))
+(defun get-result-from-code (code)
+  (cffi:foreign-enum-keyword 'voicevox-result-code code))
+
 (cffi:defcstruct voicevox-audio-query-options
-  (kana :int))
+    (kana :int))
 
 (cffi:defcstruct voicevox-tts-options
   (kana :bool)
@@ -70,22 +82,23 @@
           (cffi:foreign-slot-value options-ini '(:struct voicevox-initialize-options) 'cpu_num_threads) cpu-num-threads
           (cffi:foreign-slot-value options-ini '(:struct voicevox-initialize-options) 'load_all_models) load-all-models
           (cffi:foreign-slot-value options-ini '(:struct voicevox-initialize-options) 'open_jtalk_dict_dir) open-jtalk-dict-dir-path-c)
-    (let ((error-status
-            (get-error-from-code (vv-initialize (cffi:mem-aref options-ini '(:struct voicevox-initialize-options))))))
+    (let ((result-status
+            (get-result-from-code (vv-initialize (cffi:mem-aref options-ini '(:struct voicevox-initialize-options))))))
       (free-for-foreign
        options-ini)
       (cffi:foreign-string-free open-jtalk-dict-dir-path-c)
-      error-status)))
+      result-status)))
 
-(cffi:defcfun ("voicevox_is_gpu_mode" vv-is-gpu-mode) :bool)
-(declaim (ftype (function () (values boolean &optional)) is-gpu-mode))
-(defun is-gpu-mode ()
-  (vv-is-gpu-mode))
+(cffi:defcfun ("voicevox_is_gpu_mode" is-gpu-mode) :bool)
+(cffi:defcfun ("voicevox_get_version" get-version) :string)
+(cffi:defcfun ("voicevox_load_model" load-model) :int
+  (speaker-id :uint32))
+(cffi:defcfun ("voicevox_is_model_loaded" is-model-loaded) :bool
+  (speaker-id :uint32))
+(cffi:defcfun ("voicevox_finalize" finalize) :void)
+(cffi:defcfun ("voicevox_get_metas_json" get-metas-json) :string)
+(cffi:defcfun ("voicevox_get_supported_device_json" get-supported-device-json) :string)
 
-(cffi:defcfun ("voicevox_get_version" vv-get-version) :string)
-(declaim (ftype (function () (values string &optional)) get-version))
-(defun get-version ()
-  (vv-get-version))
 
 (cffi:defcfun ("voicevox_audio_query" vv-audio-query) :int
   "Do audio query"
@@ -103,20 +116,16 @@
   (output-wav-length (:pointer :uint))
   (output-wav (:pointer (:pointer :char))))
 
-(defun make-array-from-wav-bytes (wav-bytes length)
-  (print (type-of wav-bytes))
+(defun make-array-from-pointer (target length pointer-type value-type)
   (let ((result (make-array length)))
     (loop for i from 0 below length
           do
-             (let ((tmp (cffi:mem-aref (cffi:mem-aref wav-bytes '(:pointer (:pointer :uint8)) 0)
-                                       :uint8
+             (let ((tmp (cffi:mem-aref (cffi:mem-aref target pointer-type 0)
+                                       value-type
                                        i)))
                (setf (aref result i) tmp)))
     result))
 
-(declaim (inline get-error-from-code))
-(defun get-error-from-code (code)
-  (cffi:foreign-enum-keyword 'voicevox-result-code code))
 
 (defun free-for-foreign (&rest targets)
   (dolist (x targets)
@@ -134,20 +143,20 @@
         (text-c (cffi:foreign-string-alloc text))
         (result nil))
     (setf (cffi:foreign-slot-value audio-query-options '(:struct voicevox-audio-query-options) 'kana) (if kana 1 0))
-    (let ((error-status (get-error-from-code
+    (let ((result-status (get-result-from-code
                          (vv-audio-query
                           text-c
                           speaker-id
                           (cffi:mem-ref audio-query-options '(:struct voicevox-audio-query-options))
                           out-audio-query-json))))
-      (if (equal error-status :voicevox-result-ok)
+      (if (equal result-status :voicevox-result-ok)
           (setq result (jojo:parse (cffi:foreign-string-to-lisp (cffi:mem-aref out-audio-query-json '(:pointer (:pointer :char))))))
-          (setq result error-status))
+          (setq result result-status))
       (free-for-foreign
        audio-query-options
        out-audio-query-json)
       (cffi:foreign-string-free text-c)
-      (list :error-status error-status :audio-query result))))
+      (list :result-status result-status :audio-query result))))
 
 (declaim (ftype (function (&key
                            (:text string )
@@ -162,12 +171,12 @@
                                         :initial-element 0))
         (out-wav-bytes (cffi:foreign-alloc '(:pointer (:pointer :uint8))))
         (text-c (cffi:foreign-string-alloc text))
-        (error-status :voicevox-result-ok))
+        (result-status :voicevox-result-ok))
     (setf
      (cffi:foreign-slot-value options-tts '(:struct voicevox-tts-options) 'kana) kana
      (cffi:foreign-slot-value options-tts '(:struct voicevox-tts-options) 'enable-interrogative-upspeak) enable-interrogative-upspeak)
-    (setq error-status
-          (get-error-from-code
+    (setq result-status
+          (get-result-from-code
            (vv-tts
             text-c
             speaker-id
@@ -176,15 +185,42 @@
             out-wav-bytes
             )))
     (let* ((wav-length-unrefed (cffi:mem-ref wav-length :uint))
-           (wav-bytes-array (make-array-from-wav-bytes out-wav-bytes wav-length-unrefed)))
+           (wav-bytes-array (make-array-from-pointer
+                             out-wav-bytes
+                             wav-length-unrefed
+                             '(:pointer (:pointer :uint8))
+                             :uint8)))
       (free-for-foreign
        options-tts
        wav-length
        out-wav-bytes)
       (cffi:foreign-string-free text-c)
-      (list :error-status error-status :wav-length wav-length-unrefed :wav-bytes wav-bytes-array))))
+      (list :result-status result-status :wav-length wav-length-unrefed :wav-bytes wav-bytes-array))))
 
 
 (defun load-library (path)
   (cffi:load-foreign-library path))
 
+
+;; (defcfun ("voicevox_predict_duration" vv-predict-duration) :int
+;;   (length :uintptr)
+;;   (phoneme-vector (:pointer :int64))
+;;   (speaker-id :uint32)
+;;   (output-predict-durarion-data-length (:pointer :uintptr))
+;;   (output-predict-durarion-data (:pointer (:pointer :float))))
+;; (defun predict-duration (length phoneme-vector speaker-id)
+;;   (cffi:with-foreign-objects ((arr :int64 length))
+;;     (loop for i from 0 below length
+;;           do (setf (cffi:mem-aref arr :int64 i) (aref phoneme-vector i)))
+;;     (let ((output-predict-durarion-data-length (cffi:foreign-alloc :uintptr))
+;;           (output-predict-durarion-data (cffi:foreign-alloc '(:pointer (:pointer :float)))))
+;;       (let ((result-status (get-result-from-code (vv-predict-duration
+;;                                                   length
+;;                                                   arr
+;;                                                   output-predict-durarion-data-length
+;;                                                   output-predict-durarion-data))))
+;;         (if (eq result-status :voicevox-result-ok)
+;;             (list :result-status result-status
+;;                   :output-predicet-duration-data-length (cffi:mem-ref output-predict-durarion-data-length :uintptr)
+;;                   )
+;;             (list :result-status result-status))))))
