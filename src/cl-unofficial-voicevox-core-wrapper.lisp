@@ -304,6 +304,12 @@
   (speaker-id :uint32)
   (output-decode-data-length (:pointer :uintptr))
   (output-decode-data (:pointer (:pointer :float))))
+(declaim (ftype (function (&key
+                           (length uint64)
+                           (phoneme-size uint64)
+                           (f0 array)
+                           (phoneme-vector array)
+                           (speaker-id uint32)))))
 (defun decode (length
                phoneme-size
                f0
@@ -346,6 +352,12 @@
   (options (:struct voicevox-synthesis-options))
   (output-wav-length (:pointer :uintptr))
   (output-wav (:pointer (:pointer :uint8))))
+(declaim (ftype (function (&key
+                           (:audio-query-json string)
+                           (:speaker-id uint32)
+                           (:enable-interrogative-upspeak boolean))
+                          list)
+                synthesis))
 (defun synthesis (&key audio-query-json speaker-id enable-interrogative-upspeak)
   (cffi:with-foreign-objects ((output-wav-length :uintptr)
                               (output-wav '(:pointer :uint8))
