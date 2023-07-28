@@ -2,5 +2,7 @@
 
 This library is require voicevox-core lib file.
 
-Currently support is only 14.4 release version.
+Currently support version is only 14.4.
 
+## Comaptibility
+Tested only SBCL.
