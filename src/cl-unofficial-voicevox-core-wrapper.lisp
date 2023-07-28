@@ -111,7 +111,7 @@
   (text (:pointer :char))
   (speaker-id :uint32)
   (options (:struct voicevox-tts-options))
-  (output-wav-length (:pointer :uint))
+  (output-wav-length (:pointer :uintptr))
   (output-wav (:pointer (:pointer :char))))
 
 (defun make-array-from-pointer (target length pointer-type value-type)
@@ -282,10 +282,10 @@
       (if (eq result-status :voicevox-result-ok)
           (let* ((output-predict-intonation-data-length-unref (cffi:mem-ref output-predict-intonation-data-length :uintptr))
                  (predict-intonation-data-lisp-array (make-array-from-pointer
-                                           output-predict-intonation-data
-                                           output-predict-intonation-data-length-unref
-                                           '(:pointer (:pointer :float))
-                                           :float)))
+                                                      output-predict-intonation-data
+                                                      output-predict-intonation-data-length-unref
+                                                      '(:pointer (:pointer :float))
+                                                      :float)))
             (vv-predict-intonation-data-free (cffi:mem-aref output-predict-intonation-data '(:pointer (:pointer :float))))
             (list :result-status result-status
                   :predict-intonation-data predict-intonation-data-lisp-array
