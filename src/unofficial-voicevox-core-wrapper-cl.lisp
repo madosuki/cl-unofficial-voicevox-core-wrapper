@@ -1,9 +1,9 @@
 (in-package :cl-user)
-(defpackage unofficial-voicevox-core-wrapper-cl
+(defpackage cl-unoffcial-voicevox-core-wrapper
   (:use :cl :cffi)
   (:nicknames :unofficial-vv-core-wrapper)
   (:import-from
-   :unofficial-voicevox-core-wrapper-cl.types
+   :cl-unoffcial-voicevox-core-wrapper.types
    :uint32
    :uint16
    :voicevox-result-code-type
@@ -23,7 +23,7 @@
    #:finalize
    #:get-supported-version
    #:get-metas-json))
-(in-package :unofficial-voicevox-core-wrapper-cl)
+(in-package :cl-unoffcial-voicevox-core-wrapper)
 
 (cffi:defcenum voicevox-result-code
   (:voicevox-result-ok 0)
@@ -231,3 +231,17 @@
                   :output-predicet-duration-data-length output-predict-durarion-data-length-unref
                   :output-predicet-duration-data output-predict-durarion-data-lisp-array))
           (list :result-status result-status)))))
+
+;; (defcfun ("voicevox_predict_intonation_data_free" vv-predict-intonation-data-free) :void
+;;   (predict-intonation-data (:pointer :float)))
+;; (defcfun ("voicevox_predict_intonation" vv-predict-intonation) :int
+;;   (length :uintptr)
+;;   (vowel-phoneme-vector (:pointer :int64))
+;;   (consonant-phoneme-vector (:pointer :int64))
+;;   (start-accent-vector (:pointer :int64))
+;;   (end-accent-vector (:pointer :int64))
+;;   (start-accent-phrase-vector (:pointer :int64))
+;;   (end-accent-phrase-vector (:pointer :int64))
+;;   (speaker-id :uint32)
+;;   (output-predict-intonation-data-length :uintptr)
+;;   (output-predict-intonation-data (:pointer (:pointer :float))))

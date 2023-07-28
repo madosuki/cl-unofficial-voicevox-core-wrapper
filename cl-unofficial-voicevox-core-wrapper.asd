@@ -1,12 +1,12 @@
-(defsystem "unofficial-voicevox-core-wrapper-cl"
+(defsystem "cl-unoffcial-voicevox-core-wrapper"
   :version "0.0.1"
   :author "madosuki"
   :license "MIT"
   :depends-on ("cffi"
                "cffi-libffi"
                "jonathan"
-               "unofficial-voicevox-core-wrapper-cl-types")
+               "cl-unoffcial-voicevox-core-wrapper-types")
   :components ((:module "src"
                 :components
-                        ((:file "unofficial-voicevox-core-wrapper-cl")))))
+                        ((:file "cl-unoffcial-voicevox-core-wrapper")))))
 
