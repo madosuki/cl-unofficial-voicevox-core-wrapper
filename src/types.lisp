@@ -1,11 +1,11 @@
 (in-package :cl-user)
-(defpackage cl-unoffcial-voicevox-core-wrapper.types
+(defpackage cl-unofficial-voicevox-core-wrapper.types
   (:use :cl :cffi)
   (:export :uint16
            :uint32
            :voicevox-result-code-type
            :voicevox-acceleration-mode-type))
-(in-package :cl-unoffcial-voicevox-core-wrapper.types)
+(in-package :cl-unofficial-voicevox-core-wrapper.types)
 
 (deftype uint16 () '(integer 0 65535))
 (deftype uint32 () '(integer 0 4294967295))

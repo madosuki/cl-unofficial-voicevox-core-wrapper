@@ -1,9 +1,9 @@
 (in-package :cl-user)
-(defpackage cl-unoffcial-voicevox-core-wrapper
+(defpackage cl-unofficial-voicevox-core-wrapper
   (:use :cl :cffi)
   (:nicknames :unofficial-vv-core-wrapper)
   (:import-from
-   :cl-unoffcial-voicevox-core-wrapper.types
+   :cl-unofficial-voicevox-core-wrapper.types
    :uint32
    :uint16
    :voicevox-result-code-type
@@ -23,7 +23,7 @@
    #:finalize
    #:get-supported-version
    #:get-metas-json))
-(in-package :cl-unoffcial-voicevox-core-wrapper)
+(in-package :cl-unofficial-voicevox-core-wrapper)
 
 (cffi:defcenum voicevox-result-code
   (:voicevox-result-ok 0)
