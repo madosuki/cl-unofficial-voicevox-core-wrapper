@@ -96,6 +96,8 @@
   (wav (:pointer :uint8)))
 
 
+(cffi:defcfun ("voicevox_audio_query_json_free" vv-audio-query-json-free) :void
+  (audio-query-json (:pointer :char)))
 (cffi:defcfun ("voicevox_audio_query" vv-audio-query) :int
   "Do audio query"
   (text (:pointer :char))
@@ -116,7 +118,7 @@
   (let ((result (make-array length)))
     (loop for i from 0 below length
           do
-             (let ((tmp (cffi:mem-aref (cffi:mem-aref target pointer-type 0)
+             (let ((tmp (cffi:mem-aref (cffi:mem-aref target pointer-type)
                                        value-type
                                        i)))
                (setf (aref result i) tmp)))
@@ -148,6 +150,7 @@
             (let ((result
                     (jojo:parse
                      (cffi:foreign-string-to-lisp (cffi:mem-aref out-audio-query-json '(:pointer (:pointer :char)))))))
+              (vv-audio-query-json-free (cffi:mem-aref out-audio-query-json '(:pointer (:pointer :char))))
               (list :result-status result-status :audio-query result))
             (list :result-status result-status))))))
 
