@@ -4,7 +4,6 @@
   :license "MIT"
   :depends-on ("cffi"
                "cffi-libffi"
-               "jonathan"
                "cl-unofficial-voicevox-core-wrapper-types")
   :components ((:module "src"
                 :components

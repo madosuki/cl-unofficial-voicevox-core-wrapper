@@ -147,9 +147,7 @@
                              (cffi:mem-ref audio-query-options '(:struct voicevox-audio-query-options))
                              out-audio-query-json))))
         (if (equal result-status :voicevox-result-ok)
-            (let ((result
-                    (jojo:parse
-                     (cffi:foreign-string-to-lisp (cffi:mem-aref out-audio-query-json '(:pointer (:pointer :char)))))))
+            (let ((result (cffi:foreign-string-to-lisp (cffi:mem-aref out-audio-query-json '(:pointer (:pointer :char))))))
               (vv-audio-query-json-free (cffi:mem-aref out-audio-query-json '(:pointer (:pointer :char))))
               (list :result-status result-status :audio-query result))
             (list :result-status result-status))))))
