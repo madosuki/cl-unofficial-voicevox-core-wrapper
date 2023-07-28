@@ -1,19 +1,20 @@
 (in-package :cl-user)
 (defpackage unofficial-voicevox-core-wrapper-cl
   (:use :cl :cffi)
-  (:import-from :unofficial-voicevox-core-wrapper-cl.types
-                :uint32
-                :uint16
-                :voicevox-result-code-type
-                :voicevox-acceleration-mode-type)
+  (:nicknames :unofficial-vv-core-wrapper)
+  (:import-from
+   :unofficial-voicevox-core-wrapper-cl.types
+   :uint32
+   :uint16
+   :voicevox-result-code-type
+   :voicevox-acceleration-mode-type)
   (:export
-   :initialize
-   :generate-wav
-   :generate-audio-query
-   :load-library
-   :get-version
-   :is-gpu-mode
-   ))
+   #:initialize
+   #:generate-wav
+   #:generate-audio-query
+   #:load-library
+   #:get-version
+   #:is-gpu-mode))
 (in-package :unofficial-voicevox-core-wrapper-cl)
 
 (cffi:defcenum voicevox-result-code
