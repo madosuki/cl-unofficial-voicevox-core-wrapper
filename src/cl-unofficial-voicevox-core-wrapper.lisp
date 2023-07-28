@@ -12,8 +12,8 @@
    :voicevox-result-code-type
    :voicevox-acceleration-mode-type
    #:initialize
-   #:generate-wav
-   #:generate-audio-query
+   #:tts
+   #:audio-query
    #:load-library
    #:load-model
    #:get-version
@@ -25,7 +25,8 @@
    #:get-metas-json
    #:predict-duration
    #:predict-intonation
-   #:decode))
+   #:decode
+   #:synthesis))
 (in-package :cl-unofficial-voicevox-core-wrapper)
 
 (cffi:defcenum voicevox-result-code
@@ -60,8 +61,12 @@
   (kana :bool)
   (enable-interrogative-upspeak :bool))
 
+(cffi:defcstruct voicevox-synthesis-options
+  (enable-interrogative-upspeak :int))
+(cffi:defcfun ("voicevox_make_default_synthesis_options" vv-make-default-synthesis-options) (:struct voicevox-synthesis-options))
+
 (cffi:defcstruct voicevox-initialize-options
-  (acceleration_mode voicevox-acceleration-mode-enum)
+    (acceleration_mode voicevox-acceleration-mode-enum)
   (cpu_num_threads :uint16)
   (load_all_models :bool)
   (open_jtalk_dict_dir (:pointer :char)))
@@ -137,8 +142,8 @@
                            (:kana boolean)
                            (:speaker-id uint32))
                           list)
-                generate-audio-query))
-(defun generate-audio-query (&key text kana speaker-id)
+                audio-query))
+(defun audio-query (&key text kana speaker-id)
   (cffi:with-foreign-objects ((audio-query-options '(:struct voicevox-audio-query-options))
                               (out-audio-query-json '(:pointer (:pointer :char))))
     (cffi:with-foreign-strings ((text-c text))
@@ -161,12 +166,11 @@
                            (:enable-interrogative-upspeak boolean)
                            (:speaker-id uint32))
                           (values list &optional))
-                generate-wav))
-(defun generate-wav (&key text kana enable-interrogative-upspeak speaker-id)
+                tts))
+(defun tts (&key text kana enable-interrogative-upspeak speaker-id)
   (cffi:with-foreign-objects ((options-tts '(:struct voicevox-tts-options))
                               (wav-length :uintptr)
                               (out-wav-bytes '(:pointer (:pointer :uint8))))
-    (setf (cffi:mem-ref wav-length :uintptr) 0)
     (cffi:with-foreign-strings ((text-c text))
       (setf
        (cffi:foreign-slot-value options-tts '(:struct voicevox-tts-options) 'kana) kana
@@ -188,8 +192,7 @@
                                      '(:pointer (:pointer :uint8))
                                      :uint8)))
               (vv-wav-free (cffi:mem-ref out-wav-bytes
-                                         '(:pointer (:pointer :uint8))
-                                         0))
+                                         '(:pointer (:pointer :uint8))))
               (list :result-status result-status :wav-length wav-length-unref :wav-bytes wav-bytes-array))
             (list :result-status result-status))))))
 
@@ -313,7 +316,7 @@
   (let ((real-phoneme-size (* length phoneme-size)))
     (cffi:with-foreign-objects ((c-f0 '(:pointer :float) length)
                                 (c-phoneme '(:pointer :float) real-phoneme-size)
-                                (output-decode-data-length '(:pointer :float))
+                                (output-decode-data-length :float)
                                 (output-decode-data '(:pointer (:pointer :float))))
       (loop for i from 0 below length
             do (setf (cffi:mem-aref c-f0 '(:pointer :float) i) (aref f0 i)
@@ -340,4 +343,38 @@
               (list :result-status result-status
                     :decode-data-length output-decode-data-length-unref
                     :decode-data output-decode-data-lisp-array))
+            (list :result-status result-status))))))
+
+(cffi:defcfun ("voicevox_synthesis" vv-synthesis) :int
+  (audio-query-json (:pointer :char))
+  (speaker-id :uint32)
+  (options (:struct voicevox-synthesis-options))
+  (output-wav-length (:pointer :uintptr))
+  (output-wav (:pointer (:pointer :uint8))))
+(defun synthesis (&key audio-query-json speaker-id enable-interrogative-upspeak)
+  (cffi:with-foreign-objects ((output-wav-length :uintptr)
+                              (output-wav '(:pointer (:pointer :uint8)))
+                              (options-synthesis '(:struct voicevox-synthesis-options)))
+    (setf
+     (cffi:foreign-slot-value options-synthesis '(:struct voicevox-synthesis-options) 'enable-interrogative-upspeak)
+     (if enable-interrogative-upspeak 1 0))
+    (cffi:with-foreign-strings ((c-audio-query-json audio-query-json))
+      (let ((result-status
+              (get-result-from-code
+               (vv-synthesis
+                c-audio-query-json
+                speaker-id
+                (cffi:mem-ref options-synthesis '(:struct voicevox-synthesis-options))
+                output-wav-length
+                output-wav))))
+        (if (eq result-status :voicevox-result-ok)
+            (let* ((output-wav-length-unref (cffi:mem-ref output-wav-length :uintptr))
+                   (output-wav-lisp-array (make-array-from-pointer output-wav
+                                                                   output-wav-length-unref
+                                                                   '(:pointer (:pointer :uint8))
+                                                                   :uint8)))
+              (vv-wav-free (cffi:mem-aref output-wav '(:pointer (:pointer :uint8))))
+              (list :result-status result-status
+                    :wav-length output-wav-length-unref
+                    :wav-bytes output-wav-lisp-array ))
             (list :result-status result-status))))))
