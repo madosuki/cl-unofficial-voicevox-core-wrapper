@@ -22,7 +22,10 @@
    #:is-model-loaded
    #:finalize
    #:get-supported-version
-   #:get-metas-json))
+   #:get-metas-json
+   #:predict-duration
+   #:predict-intonation
+   #:decode))
 (in-package :cl-unofficial-voicevox-core-wrapper)
 
 (cffi:defcenum voicevox-result-code
@@ -291,3 +294,50 @@
                   :predict-intonation-data predict-intonation-data-lisp-array
                   :predict-intonation-data-length output-predict-intonation-data-length-unref))
           (list :result-status result-status)))))
+
+(cffi:defcfun ("voicevox_decode_data_free" vv-decode-data-free) :void
+  (decode-data (:pointer :float)))
+(cffi:defcfun ("voicevox_decode" vv-decode) :int
+  (length :uintptr)
+  (phoneme-size :uintptr)
+  (f0 (:pointer :float))
+  (phoneme-vector (:pointer :float))
+  (speaker-id :uint32)
+  (output-decode-data-length (:pointer :uintptr))
+  (output-decode-data (:pointer (:pointer :float))))
+(defun decode (length
+               phoneme-size
+               f0
+               phoneme-vector
+               speaker-id)
+  (let ((real-phoneme-size (* length phoneme-size)))
+    (cffi:with-foreign-objects ((c-f0 '(:pointer :float) length)
+                                (c-phoneme '(:pointer :float) real-phoneme-size)
+                                (output-decode-data-length '(:pointer :float))
+                                (output-decode-data '(:pointer (:pointer :float))))
+      (loop for i from 0 below length
+            do (setf (cffi:mem-aref c-f0 '(:pointer :float) i) (aref f0 i)
+                     (cffi:mem-aref c-phoneme '(:pointer :float) i) (aref c-phoneme i)))
+      (loop for i from (- length 1) below real-phoneme-size
+            do (setf (cffi:mem-aref c-phoneme '(:pointer :float) i) (aref c-phoneme i)))
+      (let ((result-status
+              (get-result-from-code
+               (vv-decode
+                length
+                phoneme-size
+                c-f0
+                c-phoneme
+                output-decode-data-length
+                output-decode-data))))
+        (if (eq result-status :voicevox-result-ok)
+            (let ((output-decode-data-length-unref (cffi:mem-ref output-decode-data-length :uintptr))
+                  (output-decode-data-lisp-array
+                    (make-array-from-pointer output-decode-data
+                                             output-decode-data-length-unref
+                                             '(:pointer (:pointer :float))
+                                             :float)))
+              (vv-decode-data-free (cffi:mem-aref output-decode-data '(:pointer (:pointer :float))))
+              (list :result-status result-status
+                    :decode-data-length output-decode-data-length-unref
+                    :decode-data output-decode-data-lisp-array))
+            (list :result-status result-status))))))
