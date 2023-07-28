@@ -148,7 +148,7 @@
                 audio-query))
 (defun audio-query (&key text kana speaker-id)
   (cffi:with-foreign-objects ((audio-query-options '(:struct voicevox-audio-query-options))
-                              (out-audio-query-json '(:pointer (:pointer :char))))
+                              (out-audio-query-json '(:pointer :char)))
     (cffi:with-foreign-strings ((text-c text))
       (setf (cffi:foreign-slot-value audio-query-options '(:struct voicevox-audio-query-options) 'kana) (if kana 1 0))
       (let ((result-status (get-result-from-code
@@ -158,8 +158,7 @@
                              (cffi:mem-ref audio-query-options '(:struct voicevox-audio-query-options))
                              out-audio-query-json))))
         (if (equal result-status :voicevox-result-ok)
-            (let ((result (cffi:foreign-string-to-lisp (cffi:mem-aref out-audio-query-json '(:pointer (:pointer :char))))))
-              (vv-audio-query-json-free (cffi:mem-aref out-audio-query-json '(:pointer (:pointer :char))))
+            (let ((result (cffi:foreign-string-to-lisp (cffi:mem-aref out-audio-query-json '(:pointer :char)))))
               (list :result-status result-status :audio-query result))
             (list :result-status result-status))))))
 
@@ -173,7 +172,7 @@
 (defun tts (&key text kana enable-interrogative-upspeak speaker-id)
   (cffi:with-foreign-objects ((options-tts '(:struct voicevox-tts-options))
                               (wav-length :uintptr)
-                              (out-wav-bytes '(:pointer (:pointer :uint8))))
+                              (out-wav-bytes (:pointer :uint8)))
     (cffi:with-foreign-strings ((text-c text))
       (setf
        (cffi:foreign-slot-value options-tts '(:struct voicevox-tts-options) 'kana) kana
@@ -192,10 +191,8 @@
                    (wav-bytes-array (make-array-from-pointer
                                      out-wav-bytes
                                      wav-length-unref
-                                     '(:pointer (:pointer :uint8))
+                                     (:pointer :uint8)
                                      :uint8)))
-              (vv-wav-free (cffi:mem-ref out-wav-bytes
-                                         '(:pointer (:pointer :uint8))))
               (list :result-status result-status :wav-length wav-length-unref :wav-bytes wav-bytes-array))
             (list :result-status result-status))))))
 
@@ -216,7 +213,7 @@
 (defun predict-duration (length phoneme-vector speaker-id)
   (cffi:with-foreign-objects ((arr :int64 length)
                               (output-predict-durarion-data-length :uintptr)
-                              (output-predict-durarion-data (:pointer (:pointer :float))))
+                              (output-predict-durarion-data (:pointer :float)))
     (loop for i from 0 below length
           do (setf (cffi:mem-aref arr :int64 i) (aref phoneme-vector i)))
     (let ((result-status (get-result-from-code (vv-predict-duration
@@ -229,11 +226,8 @@
                 (output-predict-durarion-data-lisp-array (make-array-from-pointer
                                                           output-predict-durarion-data
                                                           output-predict-durarion-data-length-unref
-                                                          '(:pointer (:pointer :float))
+                                                          (:pointer :float)
                                                           :float)))
-            (vv-predict-duration-data-free (cffi:mem-ref output-predict-durarion-data
-                                                         '(:pointer (:pointer :float))
-                                                         0))
             (list :result-status result-status
                   :predict-duration-data-length output-predict-durarion-data-length-unref
                   :predict-duration-data output-predict-durarion-data-lisp-array))
@@ -260,22 +254,22 @@
                            start-accent-phrase-vector
                            end-accent-phrase-vector
                            speaker-id)
-  (cffi:with-foreign-objects ((c-vowel-phoneme-vector '(:pointer :int64) length)
-                              (c-consonant-phoneme-vector '(:pointer :int64) length)
-                              (c-start-accent-vector '(:pointer :int64) length)
-                              (c-end-accent-vector '(:pointer :int64) length)
-                              (c-start-accent-phrase-vector '(:pointer :int64) length)
-                              (c-end-accent-phrase-vector '(:pointer :int64) length)
+  (cffi:with-foreign-objects ((c-vowel-phoneme-vector :int64 length)
+                              (c-consonant-phoneme-vector :int64 length)
+                              (c-start-accent-vector :int64 length)
+                              (c-end-accent-vector :int64 length)
+                              (c-start-accent-phrase-vector :int64 length)
+                              (c-end-accent-phrase-vector :int64 length)
                               (output-predict-intonation-data-length :uintptr)
-                              (output-predict-intonation-data '(:pointer (:pointer :float))))
+                              (output-predict-intonation-data (:pointer :float)))
     (loop for i from 0 below length
           do (setf
-              (cffi:mem-aref c-vowel-phoneme-vector '(:pointer :int64) i) (aref vowel-phoneme-vector i)
-              (cffi:mem-aref c-consonant-phoneme-vector '(:pointer :int64) i) (aref consonant-phoneme-vector i)
-              (cffi:mem-aref c-start-accent-vector '(:pointer :int64) i) (aref start-accent-vector i)
-              (cffi:mem-aref c-end-accent-vector '(:pointer :int64) i) (aref end-accent-vector i)
-              (cffi:mem-aref c-start-accent-phrase-vector '(:pointer :int64) i) (aref start-accent-phrase-vector i)
-              (cffi:mem-aref c-end-accent-phrase-vector '(:pointer :int64) i) (aref end-accent-phrase-vector i)))
+              (cffi:mem-aref c-vowel-phoneme-vector :int64 i) (aref vowel-phoneme-vector i)
+              (cffi:mem-aref c-consonant-phoneme-vector :int64 i) (aref consonant-phoneme-vector i)
+              (cffi:mem-aref c-start-accent-vector :int64 i) (aref start-accent-vector i)
+              (cffi:mem-aref c-end-accent-vector :int64 i) (aref end-accent-vector i)
+              (cffi:mem-aref c-start-accent-phrase-vector :int64 i) (aref start-accent-phrase-vector i)
+              (cffi:mem-aref c-end-accent-phrase-vector ':int64 i) (aref end-accent-phrase-vector i)))
     (let ((result-status
             (get-result-from-code
              (vv-predict-intonation
@@ -293,9 +287,8 @@
                  (predict-intonation-data-lisp-array (make-array-from-pointer
                                                       output-predict-intonation-data
                                                       output-predict-intonation-data-length-unref
-                                                      '(:pointer (:pointer :float))
+                                                      (:pointer :float)
                                                       :float)))
-            (vv-predict-intonation-data-free (cffi:mem-aref output-predict-intonation-data '(:pointer (:pointer :float))))
             (list :result-status result-status
                   :predict-intonation-data predict-intonation-data-lisp-array
                   :predict-intonation-data-length output-predict-intonation-data-length-unref))
@@ -317,15 +310,15 @@
                phoneme-vector
                speaker-id)
   (let ((real-phoneme-size (* length phoneme-size)))
-    (cffi:with-foreign-objects ((c-f0 '(:pointer :float) length)
-                                (c-phoneme '(:pointer :float) real-phoneme-size)
+    (cffi:with-foreign-objects ((c-f0 :float length)
+                                (c-phoneme :float real-phoneme-size)
                                 (output-decode-data-length :float)
-                                (output-decode-data '(:pointer (:pointer :float))))
+                                (output-decode-data '(:pointer :float)))
       (loop for i from 0 below length
-            do (setf (cffi:mem-aref c-f0 '(:pointer :float) i) (aref f0 i)
-                     (cffi:mem-aref c-phoneme '(:pointer :float) i) (aref c-phoneme i)))
+            do (setf (cffi:mem-aref c-f0 :float i) (aref f0 i)
+                     (cffi:mem-aref c-phoneme :float i) (aref c-phoneme i)))
       (loop for i from (- length 1) below real-phoneme-size
-            do (setf (cffi:mem-aref c-phoneme '(:pointer :float) i) (aref c-phoneme i)))
+            do (setf (cffi:mem-aref c-phoneme :float i) (aref c-phoneme i)))
       (let ((result-status
               (get-result-from-code
                (vv-decode
@@ -340,9 +333,8 @@
                   (output-decode-data-lisp-array
                     (make-array-from-pointer output-decode-data
                                              output-decode-data-length-unref
-                                             '(:pointer (:pointer :float))
+                                             '(:pointer :float)
                                              :float)))
-              (vv-decode-data-free (cffi:mem-aref output-decode-data '(:pointer (:pointer :float))))
               (list :result-status result-status
                     :decode-data-length output-decode-data-length-unref
                     :decode-data output-decode-data-lisp-array))
@@ -356,7 +348,7 @@
   (output-wav (:pointer (:pointer :uint8))))
 (defun synthesis (&key audio-query-json speaker-id enable-interrogative-upspeak)
   (cffi:with-foreign-objects ((output-wav-length :uintptr)
-                              (output-wav '(:pointer (:pointer :uint8)))
+                              (output-wav '(:pointer :uint8))
                               (options-synthesis '(:struct voicevox-synthesis-options)))
     (setf
      (cffi:foreign-slot-value options-synthesis '(:struct voicevox-synthesis-options) 'enable-interrogative-upspeak)
@@ -374,9 +366,8 @@
             (let* ((output-wav-length-unref (cffi:mem-ref output-wav-length :uintptr))
                    (output-wav-lisp-array (make-array-from-pointer output-wav
                                                                    output-wav-length-unref
-                                                                   '(:pointer (:pointer :uint8))
+                                                                   '(:pointer :uint8)
                                                                    :uint8)))
-              (vv-wav-free (cffi:mem-aref output-wav '(:pointer (:pointer :uint8))))
               (list :result-status result-status
                     :wav-length output-wav-length-unref
                     :wav-bytes output-wav-lisp-array ))
