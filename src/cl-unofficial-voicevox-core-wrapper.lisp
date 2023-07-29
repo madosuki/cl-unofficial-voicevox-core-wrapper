@@ -15,6 +15,7 @@
    #:tts
    #:audio-query
    #:load-library
+   #:close-library
    #:load-model
    #:get-version
    #:is-gpu-mode
@@ -30,7 +31,7 @@
 (in-package :cl-unofficial-voicevox-core-wrapper)
 
 (cffi:defcenum voicevox-result-code
-  (:voicevox-result-ok 0)
+    (:voicevox-result-ok 0)
   (:voicevox-result-not-loaded-openjtalk-dict-error 1)
   (:voicevox-result-load-model-error 2)
   (:voicevox-result-get-supported-device-error 3)
@@ -92,7 +93,7 @@
             (cffi:foreign-slot-value options-ini '(:struct voicevox-initialize-options) 'cpu_num_threads) cpu-num-threads
             (cffi:foreign-slot-value options-ini '(:struct voicevox-initialize-options) 'load_all_models) load-all-models
             (cffi:foreign-slot-value options-ini '(:struct voicevox-initialize-options) 'open_jtalk_dict_dir) open-jtalk-dict-dir-path-c)
-      (get-result-from-code (vv-initialize (cffi:mem-aref options-ini '(:struct voicevox-initialize-options)))))))
+      (get-result-from-code (vv-initialize (cffi:mem-ref options-ini '(:struct voicevox-initialize-options)))))))
 
 (cffi:defcfun ("voicevox_is_gpu_mode" is-gpu-mode) :bool)
 (cffi:defcfun ("voicevox_get_version" get-version) :string)
@@ -385,3 +386,6 @@
                     :wav-bytes output-wav-lisp-array ))
             (list :result-status result-status))))))
 
+
+(defun close-library (path)
+  (cffi:close-library path))
