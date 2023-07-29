@@ -199,8 +199,8 @@
 
 
 
-(defun load-library (path)
-  (cffi:load-foreign-library path))
+(defun load-library (library)
+  (cffi:load-foreign-library library))
 
 
 (defcfun ("voicevox_predict_duration_data_free" vv-predict-duration-data-free) :void
