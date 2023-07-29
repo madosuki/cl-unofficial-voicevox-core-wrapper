@@ -388,4 +388,4 @@
 
 
 (defun close-library (path)
-  (cffi:close-library path))
+  (cffi:close-foreign-library path))
