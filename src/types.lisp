@@ -7,8 +7,8 @@
            :voicevox-acceleration-mode-type))
 (in-package :cl-unofficial-voicevox-core-wrapper.types)
 
-(deftype uint16 () '(integer 0 65535))
-(deftype uint32 () '(integer 0 4294967295))
+(deftype uint16 () '(unsigned-byte 16))
+(deftype uint32 () '(unsigned-byte 32))
 
 (deftype voicevox-acceleration-mode-type ()
   '(member :voicevox-acceleration-mode-auto :voicevox-acceleration-mode-cpu :voicevox-acceleration-mode-gpu))
