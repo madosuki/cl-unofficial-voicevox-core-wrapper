@@ -8,4 +8,4 @@ Currently support version is only 14.4.
 Tested only SBCL.
   
 ## Usage
-take a look at example/vv-wrapper-example/vv-wrapper-example.ros
+take a look at example/vv-wrapper-example.ros
