@@ -4,11 +4,14 @@
   (:export :uint16
            :uint32
            :voicevox-result-code-type
-           :voicevox-acceleration-mode-type))
+           :voicevox-acceleration-mode-type
+           :voicevox-user-dict-word-type-for-enum
+           :voicevox-style-id-type))
 (in-package :cl-unofficial-voicevox-core-wrapper.types)
 
 (deftype uint16 () '(unsgined-byte 16))
 (deftype uint32 () '(unsgined-byte 32))
+(deftype voicevox-style-id-type () '(unsigned-byte 32))
 
 (deftype voicevox-acceleration-mode-type ()
   '(member :voicevox-acceleration-mode-auto :voicevox-acceleration-mode-cpu :voicevox-acceleration-mode-gpu))
@@ -41,3 +44,10 @@
     :voicevox-result-invalid-uuid-error))
 
 
+(deftype voicevox-user-dict-word-type-for-enum ()
+  '(member
+   :voicevox-user-dict-word-type-proper-noun
+   :voicevox-user-dict-word-type-common-noun
+   :voicevox-user-dict-word-type-verb
+   :voicevox-user-dict-word-type-adjective
+   :voicevox-user-dict-word-type-suffix))
