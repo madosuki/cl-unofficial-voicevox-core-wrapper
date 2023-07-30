@@ -239,16 +239,16 @@
 (cffi:defcfun ("voicevox_user_dict_add_word" vv-user-dict-add-word) :int
   (user-dict (:pointer (:struct voicevox-user-dict)))
   (word (:pointer (:struct voicevox-user-dict-word)))
-  (output-word-uuid (:pointer (:pointer :uint8))))
+  (output-word-uuid (:pointer :uint8)))
 
 (cffi:defcfun ("voicevox_user_dict_update_word" vv-user-dict-update-word) :int
   (user-dict (:pointer (:struct voicevox-user-dict)))
-  (word-uuid (:pointer (:pointer :uint8)))
+  (word-uuid (:poiner :uint8))
   (word (:pointer (:struct voicevox-user-dict-word))))
 
 (cffi:defcfun ("voicevox_user_dict_remove_word" vv-user-dict-remove-word) :int
   (user-dict (:pointer (:struct voicevox-user-dict)))
-  (word-uuid (:pointer (:pointer :uint8))))
+  (word-uuid (:pointer :uint8)))
 
 (cffi:defcfun ("voicevox_user_dict_to_json" vv-user-dict-to-json) :int
   (user-dict (:pointer (:struct voicevox-user-dict)))
