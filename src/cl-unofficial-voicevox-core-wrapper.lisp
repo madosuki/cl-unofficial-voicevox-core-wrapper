@@ -243,7 +243,7 @@
 
 (cffi:defcfun ("voicevox_user_dict_update_word" vv-user-dict-update-word) :int
   (user-dict (:pointer (:struct voicevox-user-dict)))
-  (word-uuid (:poiner :uint8))
+  (word-uuid (:pointer :uint8))
   (word (:pointer (:struct voicevox-user-dict-word))))
 
 (cffi:defcfun ("voicevox_user_dict_remove_word" vv-user-dict-remove-word) :int
@@ -261,6 +261,13 @@
 (cffi:defcfun ("voicevox_user_dict_save" vv-user-dict-save) :int
   (user-dict (:pointer (:struct voicevox-user-dict)))
   (path (:pointer :char)))
+(declaim (ftype (function ((path string)) voicevox-result-code-type) user-dict-save))
+(defun user-dict-save (path)
+  (cffi:with-foreign-object (user-dict '(:struct voicevox-user-dict))
+    (cffi:with-foreign-string (c-path path)
+      (get-result-from-code (vv-user-dict-save
+                             user-dict
+                             c-path)))))
 
 
 
