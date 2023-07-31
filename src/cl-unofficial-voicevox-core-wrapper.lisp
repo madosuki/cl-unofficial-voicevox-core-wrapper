@@ -14,16 +14,18 @@
    :open-jtalk-rc-class
    #:open-jtalk-rc-class-method-new
    :synthesizer-class
-   #:synthesizer-class-method-delete
-   #:synthesizer-class-method-initialize
-   #:synthesizer-class-method-is-gpu-mode
-   #:synthesizer-class-method-audio-query
-   #:synthesizer-class-method-synthesis
+   #:synthesizer-delete
+   #:synthesizer-initialize
+   #:synthesizer-is-gpu-mode
+   #:synthesizer-audio-query
+   #:synthesizer-synthesis
+   #:synthesizer-tts
    :voicevox-result-code-type
    :voicevox-acceleration-mode-type
    :voicevox-version
    :user-dict-class
-   #:user-dict-class-method-to-json
+   #:user-dict-to-json
+   #:user-dict-load-library
    #:load-library
    #:close-library))
 (in-package :cl-unofficial-voicevox-core-wrapper)
@@ -301,16 +303,16 @@
   ((synthesizer :accessor synthesizer :initform (cffi:foreign-alloc
                                                  '(:pointer (:struct voicevox-synthesizer))))))
 
-(defmethod synthesizer-class-method-delete ((self synthesizer-class))
+(defmethod synthesizer-delete ((self synthesizer-class))
   (vv-synthesizer-delete (cffi:mem-ref (slot-value self 'synthesizer)
                                        '(:pointer (:struct voicevox-synthesizer))))
   (cffi:foreign-free (slot-value self 'synthesizer)))
 
-(defmethod synthesizer-class-method-initialize ((self synthesizer-class)
-                                                acceleration-mode
-                                                cpu-num-threads
-                                                load-all-models
-                                                open-jtalk-rc-instance)
+(defmethod synthesizer-initialize ((self synthesizer-class)
+                                   acceleration-mode
+                                   cpu-num-threads
+                                   load-all-models
+                                   open-jtalk-rc-instance)
   (cffi:with-foreign-object (options '(:struct voicevox-initialize-options))
     (setf (cffi:foreign-slot-value options '(:struct voicevox-initialize-options) 'acceleration_mode) acceleration-mode
           (cffi:foreign-slot-value options '(:struct voicevox-initialize-options) 'cpu_num_threads) cpu-num-threads
@@ -325,11 +327,11 @@
               (slot-value self 'synthesizer)))))
       result-status)))
 
-(defmethod synthesizer-class-method-is-gpu-mode ((self synthesizer-class))
+(defmethod synthesizer-is-gpu-mode ((self synthesizer-class))
   (vv-synthesizer-is-gpu-mode (cffi:mem-ref (slot-value self 'synthesizer)
                                              '(:pointer (:struct voicevox-synthesizer)))))
 
-(defmethod synthesizer-class-method-audio-query ((self synthesizer-class)
+(defmethod synthesizer-audio-query ((self synthesizer-class)
                                                  text
                                                  style-id
                                                  kana)
@@ -355,10 +357,10 @@
               (list :result-status result-status :audio-query-json output-audio-query-json-lisp))
             (list :result-status result-status))))))
 
-(defmethod synthesizer-class-method-synthesis ((self synthesizer-class)
-                                               audio-query-json
-                                               style-id
-                                               enable-interrogative-upspeak)
+(defmethod synthesizer-synthesis ((self synthesizer-class)
+                      audio-query-json
+                      style-id
+                      enable-interrogative-upspeak)
   (cffi:with-foreign-objects ((output-wav-length :uintptr)
                               (output-wav '(:pointer :uint8))
                               (options '(:struct voicevox-synthesis-options)))
@@ -385,16 +387,16 @@
               (list :result-status result-status :wav-length wav-length-unref :wav-bytes wav-lisp-array))
             (list :result-status result-status))))))
 
-(defmethod synthesizer-class-method-tts ((self synthesizer-class)
-                                         text
-                                         style-id
-                                         kana
-                                         enable-interrogative-upspeak)
+(defmethod synthesizer-tts ((self synthesizer-class)
+                text
+                style-id
+                kana
+                enable-interrogative-upspeak)
   (cffi:with-foreign-objects ((output-wav-length :uintptr)
                               (output-wav '(:pointer :uint8))
                               (options '(:struct voicevox-tts-options)))
     (setf (cffi:foreign-slot-value options '(:struct voicevox-tts-options) 'kana) kana
-          (cffi:foreign-slot-value options '(:struct voicevox-tts-options) 'enable-interrogative-upspeak enable-interrogative-upspeak))
+          (cffi:foreign-slot-value options '(:struct voicevox-tts-options) 'enable-interrogative-upspeak) enable-interrogative-upspeak)
     (cffi:with-foreign-string (c-text text)
       (let ((result-status
               (get-result-from-code
@@ -419,17 +421,17 @@
 (defclass user-dict-class ()
   ((user-dict :accessor user-dict :initform (vv-user-dict-new))))
 
-(defmethod user-dict-class-method-load ((self user-dict-class)
-                                        dict-path)
+(defmethod user-dict-load ((self user-dict-class)
+                           dict-path)
   (cffi:with-foreign-string (c-dict-path dict-path)
     (get-result-from-code
      (vv-user-dict-load
       (slot-value self 'user-dict)
       c-dict-path))))
 
-(defmethod user-dict-class-method-add-word ((self user-dict-class)
-                                            surface
-                                            pronunciation)
+(defmethod user-dict-add-word ((self user-dict-class)
+                               surface
+                               pronunciation)
   (cffi:with-foreign-objects ((word '(:struct voicevox-user-dict-word))
                               (output-word-uuid '(:pointer :uint8) 16))
     (cffi:with-foreign-strings ((c-surface surface)
@@ -454,7 +456,7 @@
                     :word-uuid word-uuid-array))
             (list :result-status result-status))))))
 
-(defmethod user-dict-class-method-update-word ((self user-dict-class)
+(defmethod user-dict-update-word ((self user-dict-class)
                                                word-uuid
                                                surface
                                                pronunciation)
@@ -474,7 +476,7 @@
         c-word-uuid
         word)))))
 
-(defmethod user-dict-class-method-to-json ((self user-dict-class))
+(defmethod user-dict-to-json ((self user-dict-class))
   (cffi:with-foreign-object (output-json '(:pointer :char))
     (let ((result-status
             (get-result-from-code
@@ -486,7 +488,7 @@
                 :user-dict-json (cffi:foreign-string-to-lisp (cffi:mem-aref output-json '(:pointer :char))))
           (list :result-status result-status)))))
 
-(defmethod user-dict-class-method-import ((self user-dict-class)
+(defmethod user-dict-import ((self user-dict-class)
                                           other-dict-instance)
   (get-result-from-code
            (vv-user-dict-import
@@ -494,7 +496,7 @@
             (slot-value other-dict-instance 'user-dict))))
 
 
-(defmethod user-dict-class-method-save ((self user-dict-class)
+(defmethod user-dict-save ((self user-dict-class)
                                         path)
   (cffi:with-foreign-string (c-path path)
     (get-result-from-code (vv-user-dict-save
