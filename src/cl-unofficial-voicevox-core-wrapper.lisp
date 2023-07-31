@@ -116,7 +116,7 @@
 
 
 (cffi:defcstruct voicevox-tts-options
-    (kana :bool)
+  (kana :bool)
   (enable-interrogative-upspeak :bool))
 
 (cffi:defcstruct voicevox-user-dict-word
@@ -373,6 +373,37 @@
                 c-audio-query-json
                 style-id
                 (cffi:mem-ref options '(:struct voicevox-synthesis-options))
+                output-wav-length
+                output-wav))))
+        (if (eq result-status :voicevox-result-ok)
+            (let* ((wav-length-unref (cffi:mem-ref output-wav-length :uintptr))
+                   (wav-lisp-array (make-array-from-pointer
+                                    output-wav
+                                    wav-length-unref
+                                    '(:pointer :uint8)
+                                    :uint8)))
+              (list :result-status result-status :wav-length wav-length-unref :wav-bytes wav-lisp-array))
+            (list :result-status result-status))))))
+
+(defmethod synthesizer-class-method-tts ((self synthesizer-class)
+                                         text
+                                         style-id
+                                         kana
+                                         enable-interrogative-upspeak)
+  (cffi:with-foreign-objects ((output-wav-length :uintptr)
+                              (output-wav '(:pointer :uint8))
+                              (options '(:struct voicevox-tts-options)))
+    (setf (cffi:foreign-slot-value options '(:struct voicevox-tts-options) 'kana) kana
+          (cffi:foreign-slot-value options '(:struct voicevox-tts-options) 'enable-interrogative-upspeak enable-interrogative-upspeak))
+    (cffi:with-foreign-string (c-text text)
+      (let ((result-status
+              (get-result-from-code
+               (vv-synthesizer-tts
+                (cffi:mem-ref (slot-value self 'synthesizer)
+                              '(:pointer (:strcut voicevox-synthesizer)))
+                c-text
+                style-id
+                (cffi:mem-ref options '(:pointer (:struct voicevox-tts-options)))
                 output-wav-length
                 output-wav))))
         (if (eq result-status :voicevox-result-ok)
