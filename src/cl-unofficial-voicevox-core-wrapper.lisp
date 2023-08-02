@@ -288,7 +288,7 @@
   ((open-jtalk-rc-ptr :accessor open-jtalk-rc-ptr :initform (cffi:foreign-alloc '(:pointer (:struct open-jtalk-rc))))))
 
 (defmethod open-jtalk-rc-new ((self open-jtalk-rc-class)
-                              (open-jtalk-dic-dir string))
+                              open-jtalk-dic-dir)
   (cffi:with-foreign-string (c-open-jtalk-dic-dir open-jtalk-dic-dir)
     (get-result-from-code
      (vv-open-jtalk-rc-new c-open-jtalk-dic-dir
