@@ -12,7 +12,7 @@
    :voicevox-style-id-type)
   (:export
    :open-jtalk-rc-class
-   #:open-jtalk-rc-class-method-new
+   #:open-jtalk-rc-new
    :synthesizer-class
    #:synthesizer-delete
    #:synthesizer-initialize
@@ -159,7 +159,7 @@
   (path (:pointer (:char)))
   (out-model (:pointer (:pointer (:struct voicevox-voice-model)))))
 
-(cffi:defcfun ("voicevox_voice_model_id" vv-voice-model-id) :uint32
+(cffi:defcfun ("voicevox_voice_model_id" vv-voice-model-id) :string
   (model (:pointer (:struct voicevox-voice-model))))
 
 (cffi:defcfun ("voicevox_voice_model_get_metas_json" vv-voice-model-get-metas-json) :string
@@ -286,18 +286,51 @@
 
 (defclass open-jtalk-rc-class ()
   ((open-jtalk-rc-ptr :accessor open-jtalk-rc-ptr :initform (cffi:foreign-alloc '(:pointer (:struct open-jtalk-rc))))))
-(defmethod open-jtalk-rc-class-method-new ((self open-jtalk-rc-class)
-                                           (open-jtalk-dic-dir string))
+
+(defmethod open-jtalk-rc-new ((self open-jtalk-rc-class)
+                              (open-jtalk-dic-dir string))
   (cffi:with-foreign-string (c-open-jtalk-dic-dir open-jtalk-dic-dir)
     (get-result-from-code
      (vv-open-jtalk-rc-new c-open-jtalk-dic-dir
                            (slot-value self 'open-jtalk-rc-ptr)))))
 
-(defmethod open-jtalk-rc-class-method-delete ((self open-jtalk-rc-class))
+(defmethod open-jtalk-rc-delete ((self open-jtalk-rc-class))
   (vv-open-jtalk-rc-delete (cffi:mem-ref
                             (slot-value self 'open-jtalk-rc-ptr)
-                            '(:pointer (:struct open-jtalk-rc))))
+                            '(:pointer (:struct open-jtalk-rc)))))
+
+(defmethod open-jtalk-rc-close ((self open-jtalk-rc-class))
+  (unless (cffi:null-pointer-p (slot-value self 'open-jtalk-rc-ptr))
+    (open-jtalk-rc-delete self))
   (cffi:foreign-free (slot-value self 'open-jtalk-rc-ptr)))
+
+(defclass voice-model-class ()
+  ((voice-model :accessor voice-model :initform (cffi:foreign-alloc
+                                                 '(:pointer (:struct voicevox-voice-model))))))
+(defmethod voice-model-new-from-path ((self voice-model-class)
+                                     path)
+  (cffi:with-foreign-string (c-path path)
+      (get-result-from-code
+       (vv-voice-model-new-from-path
+        c-path
+        (slot-value self 'voice-model)))))
+
+(defmethod voice-model-id ((self voice-model-class))
+  (vv-voice-model-id (cffi:mem-ref (slot-value self 'voice-model)
+                                   '(:pointer (:struct voicevox-voice-model)))))
+
+(defmethod voice-model-get-metas-json ((self voice-model-class))
+  (vv-voice-model-get-metas-json (cffi:mem-ref (slot-value self 'voice-model)
+                                               '(:pointer (:struct voicevox-voice-model)))))
+
+(defmethod voice-model-delete ((self voice-model-class))
+  (vv-voice-model-delete (cffi:mem-ref (slot-value self 'voice-model)
+                                       '(:pointer (:struct voicevox-voice-model)))))
+
+(defmethod voice-model-close ((self voice-model-class))
+  (unless (cffi:null-pointer-p (slot-value self 'voice-model))
+    (voice-model-delete self))
+  (cffi:foreign-free (slot-value self 'voice-model)))
 
 (defclass synthesizer-class ()
   ((synthesizer :accessor synthesizer :initform (cffi:foreign-alloc
@@ -305,7 +338,11 @@
 
 (defmethod synthesizer-delete ((self synthesizer-class))
   (vv-synthesizer-delete (cffi:mem-ref (slot-value self 'synthesizer)
-                                       '(:pointer (:struct voicevox-synthesizer))))
+                                       '(:pointer (:struct voicevox-synthesizer)))))
+
+(defmethod synthesizer-close ((self synthesizer-class))
+  (unless (cffi:null-pointer-p (slot-value self 'synthesizer))
+    (synthesizer-delete self))
   (cffi:foreign-free (slot-value self 'synthesizer)))
 
 (defmethod synthesizer-initialize ((self synthesizer-class)
@@ -327,14 +364,52 @@
               (slot-value self 'synthesizer)))))
       result-status)))
 
+(defmethod synthesizer-load-voice-model ((self synthesizer-class)
+                                         voicevox-model-instance)
+  (get-result-from-code
+   (vv-synthesizer-load-voice-model
+    (cffi:mem-ref (slot-value self 'synthesizer)
+                  '(:pointer (:struct voicevox-synthesizer)))
+    (cffi:mem-ref (slot-value voicevox-model-instance 'voice-model)
+                  '(:pointer (:struct voicevox-voice-model))))))
+
+(defmethod synthesizer-unload-voice-model ((self synthesizer-class)
+                                           model-id)
+  (cffi:with-foreign-string (c-model-id model-id)
+    (vv-synthesizer-unload-voice-model
+     (cffi:mem-ref (slot-value self 'synthesizer) '(:pointer (:struct voicevox-synthesizer)))
+     c-model-id)))
+
 (defmethod synthesizer-is-gpu-mode ((self synthesizer-class))
   (vv-synthesizer-is-gpu-mode (cffi:mem-ref (slot-value self 'synthesizer)
-                                             '(:pointer (:struct voicevox-synthesizer)))))
+                                            '(:pointer (:struct voicevox-synthesizer)))))
+
+(defmethod synthesizer-is-loaded-voice-model ((self synthesizer-class)
+                                              model-id)
+  (cffi:with-foreign-string (c-model-id model-id)
+    (vv-synthesizer-is-load-voice-model
+     (cffi:mem-ref (slot-value self 'synthesizer) '(:pointer (:struct voicevox-synthesizer)))
+     c-model-id)))
+
+(defmethod synthesizer-get-metas-json ((self synthesizer-class))
+  (vv-synthesizer-get-metas-json (cffi:mem-ref (slot-value self 'synthesizer) '(:pointer (:struct voicevox-synthesizer)))))
+
+(defmethod create-supported-devices-json ()
+  (cffi:with-foreign-object (output-supported-devices-json '(:pointer :char))
+    (let ((result-status
+            (get-result-from-code
+             vv-create-supported-devices-json output-supported-devices-json)))
+      (if (eq result-status :voicevox-result-ok)
+          (let ((output-supported-devices-json-lisp-string
+                  (cffi:foreign-string-to-lisp
+                   (cffi:mem-aref output-supported-devices-json '(:pointer :char)))))
+            (list :result-status result-status :supported-devices-json output-supported-devices-json-lisp-string))
+          (list :result-status result-status)))))
 
 (defmethod synthesizer-audio-query ((self synthesizer-class)
-                                                 text
-                                                 style-id
-                                                 kana)
+                                    text
+                                    style-id
+                                    kana)
   (cffi:with-foreign-objects ((options '(:struct voicevox-audio-query-options))
                               (output-audio-query-json '(:pointer :char)))
     (setf (cffi:foreign-slot-value options '(:struct voicevox-audio-query-options) 'kana)
@@ -387,11 +462,89 @@
               (list :result-status result-status :wav-length wav-length-unref :wav-bytes wav-lisp-array))
             (list :result-status result-status))))))
 
-(defmethod synthesizer-tts ((self synthesizer-class)
-                text
+(defmethod synthesizer-create-accent-phrase ((self synthesizer-class)
+                                             text
+                                             style-id
+                                             kana)
+  (cffi:with-foreign-objects ((output-accent-phrase-json '(:pointer :char))
+                              (options '(:struct voicevox-accent-phrase-options)))
+    (setf (cffi:foreign-slot-value options '(:struct voicevox-accent-phrase-options)
+                                   'kana)
+          (if kana 1 0))
+    (cffi:with-foreign-string (c-text text)
+      (let ((result-status
+              (get-result-from-code
+               (vv-synthesizer-crate-accent-phrase
+                (cffi:mem-ref (slot-value self 'synthesizer) '(:pointer (:struct voicevox-synthesizer)))
+                c-text
+                (cffi:mem-ref options '(:struct voicevox-accent-phrase-options))
+                output-accent-phrase-json))))
+        (if (eq result-status :voicevox-result-ok)
+            (let ((output-accent-phrase-json-lisp-string
+                    (cffi:foreign-string-to-lisp (cffi:mem-aref output-accent-phrase-json '(:pointer :char)))))
+              (list :result-status result-status :accent-phrase-json output-accent-phrase-json-lisp-string))
+            (list :result-status result-status))))))
+
+(defmethod synthesizer-replace-mora-data ((self synthesizer-class)
+                                          accent-phrase-json
+                                          style-id)
+  (cffi:with-foreign-object (output-accent-phrase-json '(:pointer :char))
+    (cffi:with-foreign-string (c-accent-phrase-json accent-phrase-json)
+      (let ((result-status
+              (get-result-from-code
+               (vv-synthesizer-replace-mora-data
+                (cffi:mem-ref (slot-value self 'synthesizer) '(:pointer (:struct voicevox-synthesizer)))
+                c-accent-phrase-json
                 style-id
-                kana
-                enable-interrogative-upspeak)
+                output-accent-phrase-json))))
+        (if (eq result-status :voicevox-result-ok)
+            (let ((output-accent-phrase-json-lisp-string
+                    (cffi:foreign-string-to-lisp (cffi:mem-aref output-accent-phrase-json '(:pointer :char)))))
+              (list :result-status result-status :accent-phrase-json output-accent-phrase-json-lisp-string))
+            (list :result-status result-status))))))
+
+
+(defmethod synthesizer-replace-phoneme-length ((self synthesizer-class)
+                                               accent-phrase-json
+                                               style-id)
+  (cffi:with-foreign-object (output-accent-phrase-json '(:pointer :char))
+    (cffi:with-foreign-string (c-accent-phrase-json accent-phrase-json)
+      (let ((result-status
+              (get-result-from-code
+               (vv-synthesizer-replace-phoneme-length
+                (cffi:mem-ref (slot-value self 'synthesizer) '(:pointer (:struct voicevox-synthesizer)))
+                c-accent-phrase-json
+                style-id
+                output-accent-phrase-json))))
+        (if (eq result-status :voicevox-result-ok)
+            (let ((output-accent-phrase-json-lisp-string
+                    (cffi:foreign-string-to-lisp (cffi:mem-aref output-accent-phrase-json '(:pointer :char)))))
+              (list :result-status result-status :accent-phrase-json output-accent-phrase-json-lisp-string))
+            (list :result-status result-status))))))
+
+(defmethod synthesizer-replace-mora-pitch ((self synthesizer-class)
+                                           accent-phrase-json
+                                           style-id)
+  (cffi:with-foreign-object (output-accent-phrase-json '(:pointer :char))
+    (cffi:with-foreign-string (c-accent-phrase-json accent-phrase-json)
+      (let ((result-status
+              (get-result-from-code
+               (vv-synthesizer-replace-mora-pitch
+                (cffi:mem-ref (slot-value self 'synthesizer) '(:pointer (:struct voicevox-synthesizer)))
+                c-accent-phrase-json
+                style-id
+                output-accent-phrase-json))))
+        (if (eql result-status :voicevox-result-ok)
+            (let ((output-accent-phrase-json-lisp-string
+                    (cffi:foreign-string-to-lisp (cffi:mem-aref output-accent-phrase-json '(:pointer :char)))))
+              (list :result-status result-status :accent-phrase-json output-accent-phrase-json-lisp-string))
+            (list :result-status result-status))))))
+
+(defmethod synthesizer-tts ((self synthesizer-class)
+                            text
+                            style-id
+                            kana
+                            enable-interrogative-upspeak)
   (cffi:with-foreign-objects ((output-wav-length :uintptr)
                               (output-wav '(:pointer :uint8))
                               (options '(:struct voicevox-tts-options)))
@@ -419,14 +572,34 @@
             (list :result-status result-status))))))
 
 (defclass user-dict-class ()
-  ((user-dict :accessor user-dict :initform (vv-user-dict-new))))
+  ((user-dict :accessor user-dict :initform (let ((user-dict-alloc
+                                                    (cffi:foreign-alloc '(:pointer (:struct voicevox-user-dict)))))
+                                              (setf (cffi:mem-ref user-dict-alloc
+                                                                  '(:pointer (:struct voicevox-user-dict)))
+                                                    (vv-user-dict-new))
+                                              user-dict-alloc))))
+
+(defmethod user-dict-delete ((self user-dict-class))
+  (vv-user-dict-delete (cffi:mem-ref (slot-value self 'user-dict)
+                                     '(:pointer (:struct voicevox-user-dict)))))
+
+(defmethod user-dict-close ((self user-dict-class))
+  (unless (cffi:null-pointer-p (cffi:mem-ref (slot-value self 'user-dict)
+                                             '(:pointer (:struct voicevox-user-dict))))
+    (user-dict-delete self))
+  (cffi:foreign-free (slot-value self 'user-dict)))
+
+(defmethod user-dict-new ((self user-dict-class))
+  (setf (cffi:mem-ref (slot-value self 'user-dict)
+                      '(:pointer (:struct voicevox-user-dict)))
+        (vv-user-dict-new)))
 
 (defmethod user-dict-load ((self user-dict-class)
                            dict-path)
   (cffi:with-foreign-string (c-dict-path dict-path)
     (get-result-from-code
      (vv-user-dict-load
-      (slot-value self 'user-dict)
+      (cffi:mem-ref (slot-value self 'user-dict) '(:pointer (:struct voicevox-user-dict)))
       c-dict-path))))
 
 (defmethod user-dict-add-word ((self user-dict-class)
@@ -442,7 +615,7 @@
       (let ((result-status
               (get-result-from-code
                (vv-user-dict-add-word
-                (slot-value self 'user-dict)
+                (cffi:mem-ref (slot-value self 'user-dict) '(:pointer (:struct voicevox-user-dict)))
                 word
                 output-word-uuid))))
         (if (eq result-status :voicevox-result-ok)
@@ -472,7 +645,7 @@
             (vv-user-dict-word-make c-surface c-pronunciation))
       (get-result-from-code
        (vv-user-dict-update-word
-        (slot-value self 'user-dict)
+        (cffi:mem-ref (slot-value self 'user-dict) '(:pointer (:struct voicevox-user-dict)))
         c-word-uuid
         word)))))
 
@@ -481,7 +654,7 @@
     (let ((result-status
             (get-result-from-code
              (vv-user-dict-to-json
-              (slot-value self 'user-dict)
+              (cffi:mem-ref (slot-value self 'user-dict) '(:pointer (:struct voicevox-user-dict)))
               output-json))))
       (if (equal result-status :voicevox-result-ok)
           (list :result-status result-status
@@ -492,16 +665,17 @@
                                           other-dict-instance)
   (get-result-from-code
            (vv-user-dict-import
-            (slot-value self 'user-dict)
-            (slot-value other-dict-instance 'user-dict))))
+            (cffi:mem-ref (slot-value self 'user-dict) '(:pointer (:struct voicevox-user-dict)))
+            (cffi:mem-ref (slot-value other-dict-instance 'user-dict) '(:pointer (:struct voicevox-user-dict))))))
 
 
 (defmethod user-dict-save ((self user-dict-class)
                                         path)
   (cffi:with-foreign-string (c-path path)
     (get-result-from-code (vv-user-dict-save
-                           (slot-value self 'user-dict)
+                           (cffi:mem-ref (slot-value self 'user-dict) '(:pointer (:struct voicevox-user-dict)))
                            c-path))))
+
 
 
 ;; (cffi:defcfun ("voicevox_initialize" vv-initialize) :int
