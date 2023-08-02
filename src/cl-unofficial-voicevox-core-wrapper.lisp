@@ -662,10 +662,10 @@
             (list :result-status result-status))))))
 
 (defmethod user-dict-update-word ((self user-dict-class)
-                                               word-uuid
-                                               surface
-                                               pronunciation)
-  (declare (type (array (unsigned-byte 8)))
+                                  word-uuid
+                                  surface
+                                  pronunciation)
+  (declare (type (simple-array (unsigned-byte 8)))
            (type string surface)
            (type string pronunciation))
   (unless (/= (length array) 16)
