@@ -9,8 +9,8 @@
            :voicevox-style-id-type))
 (in-package :cl-unofficial-voicevox-core-wrapper.types)
 
-(deftype uint16 () '(unsgined-byte 16))
-(deftype uint32 () '(unsgined-byte 32))
+(deftype uint16 () '(unsigned-byte 16))
+(deftype uint32 () '(unsigned-byte 32))
 (deftype voicevox-style-id-type () '(unsigned-byte 32))
 
 (deftype voicevox-acceleration-mode-type ()
