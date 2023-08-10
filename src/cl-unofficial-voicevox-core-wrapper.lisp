@@ -150,7 +150,8 @@
   (out-open-jtalk (:pointer (:pointer (:struct open-jtalk-rc)))))
 
 (cffi:defcfun ("voicevox_open_jtalk_rc_use_user_dict" vv-open-jtalk-rc-use-user-dict) :int
-  (open-jtalk (:pointer (:pointer (:struct open-jtalk-rc)))))
+  (open-jtalk (:pointer (:struct open-jtalk-rc)))
+  (user-dict (:pointer (:struct voicevox-user-dict))))
 
 (cffi:defcfun ("voicevox_open_jtalk_rc_delete" vv-open-jtalk-rc-delete) :void
   (open-jtalk (:pointer (:struct open-jtalk-rc))))
@@ -304,6 +305,15 @@
   (unless (cffi:null-pointer-p (slot-value self 'open-jtalk-rc-ptr))
     (open-jtalk-rc-delete self))
   (cffi:foreign-free (slot-value self 'open-jtalk-rc-ptr)))
+
+(defmethod open-jtalk-rc-use-user-dict ((self open-jtalk-rc-class)
+                                        user-dict-class-instance)
+  (get-result-from-code
+   (vv-open-jtalk-rc-use-user-dict
+    (cffi:mem-ref (slot-value self 'open-jtalk-rc-ptr)
+                  '(:pointer (:struct open-jtalk-rc-class)))
+    (cffi:mem-ref (slot-value user-dict-class-instance 'user-dict)
+                  '(:pointer (:struct voicevox-user-dict))))))
 
 (defclass voice-model-class ()
   ((voice-model :accessor voice-model :initform (cffi:foreign-alloc
