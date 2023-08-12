@@ -32,15 +32,15 @@
     :voicevox-result-parse-kana-error
     :voicevox-result-invalid-audio-query-error
     :voicevox-result-invalid-accent-phrase-error
-    :voicevox-open-file-error
-    :voicevox-vvm-model-read-error
-    :voicevox-already-loaded-model-error
-    :voicevox-unloaded-model-error
-    :voicevox-load-user-dict-error
-    :voicevox-save-user-dict-error
-    :voicevox-unknown-user-dict-word-error
-    :voicevox-use-user-dict-error
-    :voicevox-invalid-user-dict-word-error
+    :voicevox-result-open-file-error
+    :voicevox-result-vvm-model-read-error
+    :voicevox-result-already-loaded-model-error
+    :voicevox-result-unloaded-model-error
+    :voicevox-result-load-user-dict-error
+    :voicevox-result-save-user-dict-error
+    :voicevox-result-unknown-user-dict-word-error
+    :voicevox-result-use-user-dict-error
+    :voicevox-result-invalid-user-dict-word-error
     :voicevox-result-invalid-uuid-error))
 
 

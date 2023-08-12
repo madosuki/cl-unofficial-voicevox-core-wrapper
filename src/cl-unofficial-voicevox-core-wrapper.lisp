@@ -48,15 +48,15 @@
   (:voicevox-result-parse-kana-error 13)
   (:voicevox-result-invalid-audio-query-error 14)
   (:voicevox-result-invalid-accent-phrase-error 15)
-  (:voicevox-open-file-error 16)
-  (:voicevox-vvm-model-read-error 17)
-  (:voicevox-already-loaded-model-error 18)
-  (:voicevox-unloaded-model-error 19)
-  (:voicevox-load-user-dict-error 20)
-  (:voicevox-save-user-dict-error 21)
-  (:voicevox-unknown-user-dict-word-error 22)
-  (:voicevox-use-user-dict-error 23)
-  (:voicevox-invalid-user-dict-word-error 24)
+  (:voicevox-result-open-file-error 16)
+  (:voicevox-result-vvm-model-read-error 17)
+  (:voicevox-result-already-loaded-model-error 18)
+  (:voicevox-result-unloaded-model-error 19)
+  (:voicevox-result-load-user-dict-error 20)
+  (:voicevox-result-save-user-dict-error 21)
+  (:voicevox-result-unknown-user-dict-word-error 22)
+  (:voicevox-result-use-user-dict-error 23)
+  (:voicevox-result-invalid-user-dict-word-error 24)
   (:voicevox-result-invalid-uuid-error 25))
 
 (cffi:defcenum voicevox-acceleration-mode-enum
@@ -198,7 +198,7 @@
 (cffi:defcfun ("voicevox_create_supported_devices_json" vv-create-supported-devices-json) :int
   (output-supported-devices-json (:pointer (:pointer :char))))
 
-(cffi:defcfun ("voicevox_synthesizer_audio_query" vv-synthesizer-audio-query) :int
+(cffi:defcfun ("voicevox_synthesizer_create_audio_query" vv-synthesizer-create-audio-query) :int
   (synthesizer (:pointer (:struct voicevox-synthesizer)))
   (text (:pointer :char))
   (style-id c-style-id-type)
@@ -440,7 +440,7 @@
     (cffi:with-foreign-string (c-text text)
       (let ((result-status
               (get-result-from-code
-               (vv-synthesizer-audio-query
+               (vv-synthesizer-create-audio-query
                 (cffi:mem-ref
                  (slot-value self 'synthesizer)
                  '(:pointer (:struct voicevox-synthesizer)))
