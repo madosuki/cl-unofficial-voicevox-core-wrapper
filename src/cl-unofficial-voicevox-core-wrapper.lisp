@@ -22,7 +22,7 @@
    #:synthesizer-tts
    :voicevox-result-code-type
    :voicevox-acceleration-mode-type
-   :voicevox-version
+   #:get-voicevox-version
    :user-dict-class
    #:user-dict-to-json
    #:user-dict-load-library
@@ -133,16 +133,16 @@
 (cffi:defcstruct voicevox-user-dict)
 (cffi:defcstruct voicevox-voice-model)
 
-(cffi:defcvar ("voicevox_default_initialize_options" vv-default-initialize-options)
+(cffi:defcfun ("voicevox_make_default_initialize_options" vv-make-default-initialize-options)
     (:struct voicevox-initialize-options))
-(cffi:defcvar ("voicevox_version" voicevox-version :read-only t) :string)
-(cffi:defcvar ("voicevox_default_audio_query_options" vv-default-audio-query-options)
+(cffi:defcfun ("voicevox_get_version" get-voicevox-version) :string)
+(cffi:defcfun ("voicevox_make_default_audio_query_options" vv-make-default-audio-query-options)
     (:struct voicevox-audio-query-options))
-(cffi:defcvar ("voicevox_default_accent_phrase_options" vv-default-accent-phrase-options)
+(cffi:defcfun ("voicevox_make_default_accent_phrase_options" vv-make-default-accent-phrase-options)
   (:struct voicevox-accent-phrase-options))
-(cffi:defcvar ("voicevox_default_synthesis_options" vv-default-synthesis-options)
+(cffi:defcfun ("voicevox_make_default_synthesis_options" vv-make-default-synthesis-options)
     (:struct voicevox-synthesis-options))
-(cffi:defcvar ("voicevox_default_tts_options" vv-default-tts-options)
+(cffi:defcfun ("voicevox_make_default_tts_options" vv-make-default-tts-options)
     (:struct voicevox-tts-options))
 
 (cffi:defcfun ("voicevox_open_jtalk_rc_new" vv-open-jtalk-rc-new) :int
