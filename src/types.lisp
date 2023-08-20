@@ -20,21 +20,21 @@
   '(member
     :voicevox-result-ok
     :voicevox-result-not-loaded-openjtalk-dict-error
-    :voicevox-result-load-model-error
     :voicevox-result-get-supported-device-error
     :voicevox-result-gpu-support-error
-    :voicevox-result-load-metas-error
     :voicevox-result-invalid-style-id-error
-    :voicevox-result-invalid-model-index-error
+    :voicevox-result-invalid-model-id-error
     :voicevox-result-inference-error
     :voicevox-result-extract-full-context-label-error
     :voicevox-result-invalid-utf8-input-error
     :voicevox-result-parse-kana-error
     :voicevox-result-invalid-audio-query-error
     :voicevox-result-invalid-accent-phrase-error
-    :voicevox-result-open-file-error
-    :voicevox-result-vvm-model-read-error
-    :voicevox-result-already-loaded-model-error
+    :voicevox-result-open-zip-file-error
+    :voicevox-result-read-zip-entry-error
+    :voicevox-result-model-already-loaded-error
+    :voicevox-result-style-already-loaded-error
+    :voicevox-result-invalid-model-data-error
     :voicevox-result-unloaded-model-error
     :voicevox-result-load-user-dict-error
     :voicevox-result-save-user-dict-error
