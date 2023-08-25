@@ -181,7 +181,7 @@
   (synthesizer (:pointer (:struct voicevox-synthesizer)))
   (model (:pointer (:struct voicevox-voice-model))))
 
-(cffi:defcfun ("voicevox_synthesizer_unload_voice_modl" vv-synthesizer-unload-voice-model) :int
+(cffi:defcfun ("voicevox_synthesizer_unload_voice_model" vv-synthesizer-unload-voice-model) :int
   (synthesizer (:pointer (:struct voicevox-synthesizer)))
   (model-id c-model-id-type))
 
