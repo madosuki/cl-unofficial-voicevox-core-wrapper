@@ -13,6 +13,12 @@
   (:export
    :open-jtalk-rc-class
    #:open-jtalk-rc-new
+   :voice-model-class
+   #:voice-model-new-from-path
+   #:voice-model-id
+   #:voice-model-get-metas-json
+   #:voice-model-delete
+   #:voice-model-close
    :synthesizer-class
    #:synthesizer-delete
    #:synthesizer-initialize
@@ -20,6 +26,8 @@
    #:synthesizer-audio-query
    #:synthesizer-synthesis
    #:synthesizer-tts
+   #:synthesizer-load-voice-model
+   #:synthesizer-unload-voice-model
    :voicevox-result-code-type
    :voicevox-acceleration-mode-type
    #:get-voicevox-version
@@ -103,7 +111,7 @@
   (cffi:foreign-enum-keyword 'voicevox-result-code code))
 
 (cffi:defcstruct voicevox-initialize-options
-    (acceleration_mode voicevox-acceleration-mode-enum)
+  (acceleration_mode voicevox-acceleration-mode-enum)
   (cpu_num_threads :uint16)
   (load_all_models :bool))
 
@@ -371,15 +379,13 @@
     (setf (cffi:foreign-slot-value options '(:struct voicevox-initialize-options) 'acceleration_mode) acceleration-mode
           (cffi:foreign-slot-value options '(:struct voicevox-initialize-options) 'cpu_num_threads) cpu-num-threads
           (cffi:foreign-slot-value options '(:struct voicevox-initialize-options) 'load_all_models) load-all-models)
-    (let ((result-status
-            (get-result-from-code
-             (vv-synthesizer-new-with-initialize
-              (cffi:mem-ref
-               (slot-value open-jtalk-rc-instance 'open-jtalk-rc-ptr)
-               '(:pointer (:struct open-jtalk-rc)))
-              (cffi:mem-ref options '(:struct voicevox-initialize-options))
-              (slot-value self 'synthesizer)))))
-      result-status)))
+    (get-result-from-code
+     (vv-synthesizer-new-with-initialize
+      (cffi:mem-ref
+       (slot-value open-jtalk-rc-instance 'open-jtalk-rc-ptr)
+       '(:pointer (:struct open-jtalk-rc)))
+      (cffi:mem-ref options '(:struct voicevox-initialize-options))
+      (slot-value self 'synthesizer)))))
 
 (defmethod synthesizer-load-voice-model ((self synthesizer-class)
                                          voicevox-model-instance)
