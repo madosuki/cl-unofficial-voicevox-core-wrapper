@@ -112,8 +112,8 @@
 
 (cffi:defcstruct voicevox-initialize-options
   (acceleration_mode voicevox-acceleration-mode-enum)
-  (cpu_num_threads :uint16)
-  (load_all_models :bool))
+  (load_all_models :bool)
+  (cpu_num_threads :uint16))
 
 (cffi:defcstruct voicevox-audio-query-options
     (kana :int))
