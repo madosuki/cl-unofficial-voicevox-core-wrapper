@@ -135,13 +135,9 @@
 (cffi:defcstruct voicevox-user-dict)
 (cffi:defcstruct voicevox-voice-model)
 
+(cffi:defcfun ("voicevox_get_version" get-voicevox-version) :string)
 (cffi:defcfun ("voicevox_make_default_initialize_options" vv-make-default-initialize-options)
     (:struct voicevox-initialize-options))
-(cffi:defcfun ("voicevox_get_version" get-voicevox-version) :string)
-(cffi:defcfun ("voicevox_make_default_audio_query_options" vv-make-default-audio-query-options)
-    (:struct voicevox-audio-query-options))
-(cffi:defcfun ("voicevox_make_default_accent_phrase_options" vv-make-default-accent-phrase-options)
-  (:struct voicevox-accent-phrase-options))
 (cffi:defcfun ("voicevox_make_default_synthesis_options" vv-make-default-synthesis-options)
     (:struct voicevox-synthesis-options))
 (cffi:defcfun ("voicevox_make_default_tts_options" vv-make-default-tts-options)
@@ -378,10 +374,9 @@
   (cffi:foreign-free (slot-value self 'synthesizer)))
 
 (defmethod synthesizer-initialize ((self synthesizer-class)
-                                   &key
-                                     acceleration-mode
-                                     cpu-num-threads
-                                     open-jtalk-rc-instance)
+                                   acceleration-mode
+                                   cpu-num-threads
+                                   open-jtalk-rc-instance)
   (declare (type voicevox-acceleration-mode-type acceleration-mode)
            (type uint16 cpu-num-threads)
            (type open-jtalk-rc-class open-jtalk-rc-instance))
@@ -442,8 +437,8 @@
           (list :result-status result-status)))))
 
 (defmethod synthesizer-create-audio-query-from-kana ((self synthesizer-class)
-                                    kana
-                                    style-id)
+                                                     kana
+                                                     style-id)
   (declare (type string kana)
            (type uint32 style-id))
   (cffi:with-foreign-object (output-audio-query-json '(:pointer :char))
@@ -465,8 +460,8 @@
             (list :result-status result-status))))))
 
 (defmethod synthesizer-create-audio-query ((self synthesizer-class)
-                                    text
-                                    style-id)
+                                           text
+                                           style-id)
   (declare (type string text)
            (type uint32 style-id))
   (cffi:with-foreign-object (output-audio-query-json '(:pointer :char))
@@ -488,9 +483,9 @@
             (list :result-status result-status))))))
 
 (defmethod synthesizer-synthesis ((self synthesizer-class)
-                      audio-query-json
-                      style-id
-                      enable-interrogative-upspeak)
+                                  audio-query-json
+                                  style-id
+                                  enable-interrogative-upspeak)
   (declare (type string audio-query-json)
            (type uint32 style-id)
            (type boolean enable-interrogative-upspeak))
@@ -521,8 +516,8 @@
             (list :result-status result-status))))))
 
 (defmethod synthesizer-create-accent-phrase-from-kana ((self synthesizer-class)
-                                             kana
-                                             style-id)
+                                                       kana
+                                                       style-id)
   (declare (type string kana)
            (type uint32 style-id))
   (cffi:with-foreign-object (output-accent-phrase-json '(:pointer :char))
@@ -545,7 +540,7 @@
                                              style-id)
   (declare (type string text)
            (type uint32 style-id))
-  (cffi:with-foreign-objects (output-accent-phrase-json '(:pointer :char))
+  (cffi:with-foreign-object (output-accent-phrase-json '(:pointer :char))
     (cffi:with-foreign-string (c-text text)
       (let ((result-status
               (get-result-from-code

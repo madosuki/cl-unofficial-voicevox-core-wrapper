@@ -26,10 +26,12 @@ exec ros -Q -- $0 "$@"
   (let ((tmp-text-option (cadr (member "--text" argv :test #'equal)))
         (tmp-lib-file-path-option (cadr (member "--lib-file-path" argv :test #'equal)))
         (tmp-open-jtalk-dict-dir-path-option (cadr (member "--open-jtalk-dir-path" argv :test #'equal)))
-        (tmp-speaker-id-option (cadr (member "--speaker-id" argv :test #'equal))))
+        (tmp-speaker-id-option (cadr (member "--speaker-id" argv :test #'equal)))
+        (tmp-voice-model-file-path-option (cadr (member "--voice-model-file-path" argv :test #'equal))))
     (if (or (null tmp-text-option)
             (null tmp-lib-file-path-option)
-            (null tmp-open-jtalk-dict-dir-path-option))
+            (null tmp-open-jtalk-dict-dir-path-option)
+            (null tmp-voice-model-file-path-option))
         nil
         (let ((speaker-id-integer (parse-integer tmp-speaker-id-option :junk-allowed t)))
           (if speaker-id-integer
@@ -37,48 +39,60 @@ exec ros -Q -- $0 "$@"
                :text tmp-text-option
                :lib-file-path tmp-lib-file-path-option
                :open-jtalk-dict-dir-path tmp-open-jtalk-dict-dir-path-option
+               :voice-model-file-path tmp-voice-model-file-path-option
                :speaker-id speaker-id-integer)
               (list
                :text tmp-text-option
                :lib-file-path tmp-lib-file-path-option
+               :voice-model-file-path tmp-voice-model-file-path-option
                :open-jtalk-dict-dir-path tmp-open-jtalk-dict-dir-path-option))))))
 
 (defun main (&rest argv)
   (declare (ignorable argv))
   (let ((parsed (parse-option argv)))
     (unless parsed
-      (format t "require --text and --lib-file-path , --open-jtalk-dir-path. --speaker-id is optionaly.~%")
+      (format t "require --text and --lib-file-path , --open-jtalk-dir-path, --voice-model-file-path. --speaker-id is optionaly.~%")
       (return-from main nil))
     (let* ((text (cadr (member :text parsed)))
            (lib-file-path (cadr (member :lib-file-path parsed)))
            (open-jtalk-dict-dir-path (cadr (member :open-jtalk-dict-dir-path parsed)))
            (speaker-id (cadr (member :speaker-id parsed)))
-           (library (cl-unofficial-voicevox-core-wrapper:load-library lib-file-path)))
+           (library (cl-unofficial-voicevox-core-wrapper:load-library lib-file-path))
+           (open-jtalk-instance (make-instance 'cl-unofficial-voicevox-core-wrapper:open-jtalk-rc-class))
+           (voice-model-file-path (cadr (member :voice-model-file-path parsed)))
+           (voice-model-instance (make-instance 'cl-unofficial-voicevox-core-wrapper:voice-model-class)))
       (unless speaker-id
         (setq speaker-id 0))
-      (format t "version: ~A~%" (cl-unofficial-voicevox-core-wrapper:get-version))
-      (print (cl-unofficial-voicevox-core-wrapper:initialize
-              :acceleration-mode :voicevox-acceleration-mode-cpu
-              :cpu-num-threads 0
-              :load-all-models t
-              :open-jtalk-dict-dir open-jtalk-dict-dir-path))
-      (let ((audio-query-result (cl-unofficial-voicevox-core-wrapper:create-audio-query
-                                 :text text
-                                 :speaker-id speaker-id)))
-        (if (equal (cadr (member :result-status audio-query-result)) :voicevox-result-ok)
-            (let* ((audio-query (cadr (member :audio-query audio-query-result)))
-                   (result (cl-unofficial-voicevox-core-wrapper:synthesis
-                            :audio-query-json audio-query
-                            :speaker-id speaker-id
-                            :enable-interrogative-upspeak nil)))
-              (if (equal (cadr (member :result-status result)) :voicevox-result-ok)
-                  (write-wav-file
-                   :filepath "a.wav"
-                   :wav-length (cadr (member :wav-length result))
-                   :wav-bytes (cadr (member :wav-bytes result)))
-                  (print (cadr (member :result-status result)))))
-            (print (cadr (member :result-status audio-query-result))))
-        )
+      (format t "version: ~A~%" (cl-unofficial-voicevox-core-wrapper:get-voicevox-version))
+      (open-jtalk-rc-new open-jtalk-instance open-jtalk-dict-dir-path)
+      (voice-model-new-from-path voice-model-instance voice-model-file-path)
+      (let ((synthesizer-instance (make-instance 'cl-unofficial-voicevox-core-wrapper:synthesizer-class)))
+        (print (cl-unofficial-voicevox-core-wrapper:synthesizer-initialize
+                synthesizer-instance
+                :voicevox-acceleration-mode-cpu
+                0
+                open-jtalk-instance))
+        (cl-unofficial-voicevox-core-wrapper:synthesizer-load-voice-model synthesizer-instance
+                                                                          voice-model-instance)
+        (let ((audio-query-result (cl-unofficial-voicevox-core-wrapper:synthesizer-create-audio-query
+                                   synthesizer-instance
+                                   text
+                                   speaker-id)))
+          (if (equal (cadr (member :result-status audio-query-result)) :voicevox-result-ok)
+              (let* ((audio-query (cadr (member :audio-query-json audio-query-result)))
+                     (result (cl-unofficial-voicevox-core-wrapper:synthesizer-synthesis
+                              synthesizer-instance
+                              audio-query
+                              speaker-id
+                              nil)))
+                (if (equal (cadr (member :result-status result)) :voicevox-result-ok)
+                    (write-wav-file
+                     :filepath "a.wav"
+                     :wav-length (cadr (member :wav-length result))
+                     :wav-bytes (cadr (member :wav-bytes result)))
+                    (print (cadr (member :result-status result)))))
+              (print (cadr (member :result-status audio-query-result))))
+          ))
       (cl-unofficial-voicevox-core-wrapper:close-library library)))
   )
 ;;; vim: set ft=lisp lisp:
