@@ -23,9 +23,13 @@
    #:synthesizer-delete
    #:synthesizer-initialize
    #:synthesizer-is-gpu-mode
-   #:synthesizer-audio-query
+   #:synthesizer-create-audio-query
+   #:synthesizer-create-audio-query-from-kana
    #:synthesizer-synthesis
+   #:synthesizer-create-accent-phrase-from-kana
+   #:synthesizer-create-accent-phrase
    #:synthesizer-tts
+   #:synthesizer-tts-from-kana
    #:synthesizer-load-voice-model
    #:synthesizer-unload-voice-model
    :voicevox-result-code-type
@@ -42,12 +46,12 @@
 (cffi:defctype c-model-id-type (:pointer :char))
 
 (cffi:defcenum voicevox-result-code
-    (:voicevox-result-ok 0)
+  (:voicevox-result-ok 0)
   (:voicevox-result-not-loaded-openjtalk-dict-error 1)
   (:voicevox-result-get-supported-device-error 3)
   (:voicevox-result-gpu-support-error 4)
-  (:voicevox-result-invalid-style-id-error 6)
-  (:voicevox-result-invalid-model-id-error 7)
+  (:voicevox-result-style-not-found-error 6)
+  (:voicevox-result-model-not-found-error 7)
   (:voicevox-result-inference-error 8)
   (:voicevox-result-extract-full-context-label-error 11)
   (:voicevox-result-invalid-utf8-input-error 12)
@@ -59,7 +63,6 @@
   (:voicevox-result-model-already-loaded-error 18)
   (:voicevox-result-style-already-loaded-error 26)
   (:voicevox-result-invalid-model-data-error 27)
-  (:voicevox-result-unloaded-model-error 19)
   (:voicevox-result-load-user-dict-error 20)
   (:voicevox-result-save-user-dict-error 21)
   (:voicevox-result-unknown-user-dict-word-error 22)
@@ -112,21 +115,12 @@
 
 (cffi:defcstruct voicevox-initialize-options
   (acceleration_mode voicevox-acceleration-mode-enum)
-  (load_all_models :bool)
   (cpu_num_threads :uint16))
-
-(cffi:defcstruct voicevox-audio-query-options
-    (kana :int))
-
-(cffi:defcstruct voicevox-accent-phrase-options
-  (kana :int))
 
 (cffi:defcstruct voicevox-synthesis-options
   (enable-interrogative-upspeak :int))
 
-
 (cffi:defcstruct voicevox-tts-options
-  (kana :bool)
   (enable-interrogative-upspeak :bool))
 
 (cffi:defcstruct voicevox-user-dict-word
@@ -177,7 +171,7 @@
 (cffi:defcfun ("voicevox_voice_model_delete" vv-voice-model-delete) :void
   (model (:pointer (:struct voicevox-voice-model))))
 
-(cffi:defcfun ("voicevox_synthesizer_new_with_initialize" vv-synthesizer-new-with-initialize) :int
+(cffi:defcfun ("voicevox_synthesizer_new" vv-synthesizer-new) :int
   (open-jtalk (:pointer (:struct open-jtalk-rc)))
   (options (:struct voicevox-initialize-options))
   (out-synthesizer (:pointer (:pointer (:struct voicevox-synthesizer)))))
@@ -200,24 +194,34 @@
   (synthesizer (:pointer (:struct voicevox-synthesizer)))
   (model-id c-model-id-type))
 
-(cffi:defcfun ("voicevox_synthesizer_get_metas_json" vv-synthesizer-get-metas-json) :string
+(cffi:defcfun ("voicevox_synthesizer_create_metas_json" vv-synthesizer-create-metas-json) :string
   (synthesizer (:pointer (:struct voicevox-synthesizer))))
 
 (cffi:defcfun ("voicevox_create_supported_devices_json" vv-create-supported-devices-json) :int
   (output-supported-devices-json (:pointer (:pointer :char))))
 
+(cffi:defcfun ("voicevox_synthesizer_create_audio_query_from_kana" vv-synthesizer-create-audio-query-from-kana) :int
+  (synthesizer (:pointer (:struct voicevox-synthesizer)))
+  (kana (:pointer :char))
+  (style-id c-style-id-type)
+  (output-audio-query-json (:pointer (:pointer :char))))
+
 (cffi:defcfun ("voicevox_synthesizer_create_audio_query" vv-synthesizer-create-audio-query) :int
   (synthesizer (:pointer (:struct voicevox-synthesizer)))
   (text (:pointer :char))
   (style-id c-style-id-type)
-  (options (:struct voicevox-audio-query-options))
   (output-audio-query-json (:pointer (:pointer :char))))
+
+(cffi:defcfun ("voicevox_synthesizer_create_accent_phrase_from_kana" vv-synthesizer-crate-accent-phrase-from-kana) :int
+  (synthesizer (:pointer (:struct voicevox-synthesizer)))
+  (kana (:pointer :char))
+  (style-id c-style-id-type)
+  (output-accent-phrase-json (:pointer (:pointer :char))))
 
 (cffi:defcfun ("voicevox_synthesizer_create_accent_phrase" vv-synthesizer-crate-accent-phrase) :int
   (synthesizer (:pointer (:struct voicevox-synthesizer)))
   (text (:pointer :char))
   (style-id c-style-id-type)
-  (options (:struct voicevox-accent-phrase-options))
   (output-accent-phrase-json (:pointer (:pointer :char))))
 
 (cffi:defcfun ("voicevox_synthesizer_replace_mora_data" vv-synthesizer-replace-mora-data) :int
@@ -243,6 +247,14 @@
   (audio-query-json (:pointer :char))
   (style-id c-style-id-type)
   (options (:struct voicevox-synthesis-options))
+  (output-wav-length (:pointer :uintptr))
+  (output-wav (:pointer (:pointer :uint8))))
+
+(cffi:defcfun ("voicevox_synthesizer_tts_from_kana" vv-synthesizer-tts-from-kana) :int
+  (synthesizer (:pointer (:struct voicevox-synthesizer)))
+  (kana (:pointer :char))
+  (style-id c-style-id-type)
+  (options (:struct voicevox-tts-options))
   (output-wav-length (:pointer :uintptr))
   (output-wav (:pointer (:pointer :uint8))))
 
@@ -369,18 +381,15 @@
                                    &key
                                      acceleration-mode
                                      cpu-num-threads
-                                     load-all-models
                                      open-jtalk-rc-instance)
   (declare (type voicevox-acceleration-mode-type acceleration-mode)
            (type uint16 cpu-num-threads)
-           (type boolean load-all-models)
            (type open-jtalk-rc-class open-jtalk-rc-instance))
   (cffi:with-foreign-object (options '(:struct voicevox-initialize-options))
     (setf (cffi:foreign-slot-value options '(:struct voicevox-initialize-options) 'acceleration_mode) acceleration-mode
-          (cffi:foreign-slot-value options '(:struct voicevox-initialize-options) 'cpu_num_threads) cpu-num-threads
-          (cffi:foreign-slot-value options '(:struct voicevox-initialize-options) 'load_all_models) load-all-models)
+          (cffi:foreign-slot-value options '(:struct voicevox-initialize-options) 'cpu_num_threads) cpu-num-threads)
     (get-result-from-code
-     (vv-synthesizer-new-with-initialize
+     (vv-synthesizer-new
       (cffi:mem-ref
        (slot-value open-jtalk-rc-instance 'open-jtalk-rc-ptr)
        '(:pointer (:struct open-jtalk-rc)))
@@ -432,17 +441,35 @@
             (list :result-status result-status :supported-devices-json output-supported-devices-json-lisp-string))
           (list :result-status result-status)))))
 
-(defmethod synthesizer-audio-query ((self synthesizer-class)
+(defmethod synthesizer-create-audio-query-from-kana ((self synthesizer-class)
+                                    kana
+                                    style-id)
+  (declare (type string kana)
+           (type uint32 style-id))
+  (cffi:with-foreign-object (output-audio-query-json '(:pointer :char))
+    (cffi:with-foreign-string (c-kana kana)
+      (let ((result-status
+              (get-result-from-code
+               (vv-synthesizer-create-audio-query-from-kana
+                (cffi:mem-ref
+                 (slot-value self 'synthesizer)
+                 '(:pointer (:struct voicevox-synthesizer)))
+                c-kana
+                style-id
+                output-audio-query-json))))
+        (if (eq result-status :voicevox-result-ok)
+            (let ((output-audio-query-json-lisp
+                    (cffi:foreign-string-to-lisp (cffi:mem-aref output-audio-query-json
+                                                                '(:pointer :char)))))
+              (list :result-status result-status :audio-query-json output-audio-query-json-lisp))
+            (list :result-status result-status))))))
+
+(defmethod synthesizer-create-audio-query ((self synthesizer-class)
                                     text
-                                    style-id
-                                    kana)
+                                    style-id)
   (declare (type string text)
-           (type uint32 style-id)
-           (type boolean kana))
-  (cffi:with-foreign-objects ((options '(:struct voicevox-audio-query-options))
-                              (output-audio-query-json '(:pointer :char)))
-    (setf (cffi:foreign-slot-value options '(:struct voicevox-audio-query-options) 'kana)
-          (if kana 1 0))
+           (type uint32 style-id))
+  (cffi:with-foreign-object (output-audio-query-json '(:pointer :char))
     (cffi:with-foreign-string (c-text text)
       (let ((result-status
               (get-result-from-code
@@ -452,7 +479,6 @@
                  '(:pointer (:struct voicevox-synthesizer)))
                 c-text
                 style-id
-                (cffi:mem-ref options '(:struct voicevox-audio-query-options))
                 output-audio-query-json))))
         (if (eq result-status :voicevox-result-ok)
             (let ((output-audio-query-json-lisp
@@ -494,25 +520,38 @@
               (list :result-status result-status :wav-length wav-length-unref :wav-bytes wav-lisp-array))
             (list :result-status result-status))))))
 
+(defmethod synthesizer-create-accent-phrase-from-kana ((self synthesizer-class)
+                                             kana
+                                             style-id)
+  (declare (type string kana)
+           (type uint32 style-id))
+  (cffi:with-foreign-object (output-accent-phrase-json '(:pointer :char))
+    (cffi:with-foreign-string (c-kana kana)
+      (let ((result-status
+              (get-result-from-code
+               (vv-synthesizer-crate-accent-phrase-from-kana
+                (cffi:mem-ref (slot-value self 'synthesizer) '(:pointer (:struct voicevox-synthesizer)))
+                c-kana
+                style-id
+                output-accent-phrase-json))))
+        (if (eq result-status :voicevox-result-ok)
+            (let ((output-accent-phrase-json-lisp-string
+                    (cffi:foreign-string-to-lisp (cffi:mem-aref output-accent-phrase-json '(:pointer :char)))))
+              (list :result-status result-status :accent-phrase-json output-accent-phrase-json-lisp-string))
+            (list :result-status result-status))))))
+
 (defmethod synthesizer-create-accent-phrase ((self synthesizer-class)
                                              text
-                                             style-id
-                                             kana)
+                                             style-id)
   (declare (type string text)
-           (type uint32 style-id)
-           (type boolean kana))
-  (cffi:with-foreign-objects ((output-accent-phrase-json '(:pointer :char))
-                              (options '(:struct voicevox-accent-phrase-options)))
-    (setf (cffi:foreign-slot-value options '(:struct voicevox-accent-phrase-options)
-                                   'kana)
-          (if kana 1 0))
+           (type uint32 style-id))
+  (cffi:with-foreign-objects (output-accent-phrase-json '(:pointer :char))
     (cffi:with-foreign-string (c-text text)
       (let ((result-status
               (get-result-from-code
                (vv-synthesizer-crate-accent-phrase
                 (cffi:mem-ref (slot-value self 'synthesizer) '(:pointer (:struct voicevox-synthesizer)))
                 c-text
-                (cffi:mem-ref options '(:struct voicevox-accent-phrase-options))
                 output-accent-phrase-json))))
         (if (eq result-status :voicevox-result-ok)
             (let ((output-accent-phrase-json-lisp-string
@@ -581,20 +620,50 @@
               (list :result-status result-status :accent-phrase-json output-accent-phrase-json-lisp-string))
             (list :result-status result-status))))))
 
-(defmethod synthesizer-tts ((self synthesizer-class)
-                            text
-                            style-id
-                            kana
-                            enable-interrogative-upspeak)
-  (declare (type string text)
+(defmethod synthesizer-tts-from-kana ((self synthesizer-class)
+                                      kana
+                                      style-id
+                                      enable-interrogative-upspeak)
+  (declare (type string kana)
            (type uint32 style-id)
-           (type boolean kana)
            (type enable-interrogative-upspeak))
   (cffi:with-foreign-objects ((output-wav-length :uintptr)
                               (output-wav '(:pointer :uint8))
                               (options '(:struct voicevox-tts-options)))
-    (setf (cffi:foreign-slot-value options '(:struct voicevox-tts-options) 'kana) kana
-          (cffi:foreign-slot-value options '(:struct voicevox-tts-options) 'enable-interrogative-upspeak) enable-interrogative-upspeak)
+    (setf (cffi:foreign-slot-value options '(:struct voicevox-tts-options) 'enable-interrogative-upspeak) enable-interrogative-upspeak)
+    (cffi:with-foreign-string (c-kana kana)
+      (let ((result-status
+              (get-result-from-code
+               (vv-synthesizer-tts-from-kana
+                (cffi:mem-ref (slot-value self 'synthesizer)
+                              '(:pointer (:strcut voicevox-synthesizer)))
+                c-kana
+                style-id
+                (cffi:mem-ref options '(:pointer (:struct voicevox-tts-options)))
+                output-wav-length
+                output-wav))))
+        (if (eq result-status :voicevox-result-ok)
+            (let* ((wav-length-unref (cffi:mem-ref output-wav-length :uintptr))
+                   (wav-lisp-array (make-array-from-pointer
+                                    output-wav
+                                    wav-length-unref
+                                    '(:pointer :uint8)
+                                    :uint8)))
+              (list :result-status result-status :wav-length wav-length-unref :wav-bytes wav-lisp-array))
+            (list :result-status result-status))))))
+
+
+(defmethod synthesizer-tts ((self synthesizer-class)
+                            text
+                            style-id
+                            enable-interrogative-upspeak)
+  (declare (type string text)
+           (type uint32 style-id)
+           (type enable-interrogative-upspeak))
+  (cffi:with-foreign-objects ((output-wav-length :uintptr)
+                              (output-wav '(:pointer :uint8))
+                              (options '(:struct voicevox-tts-options)))
+    (setf (cffi:foreign-slot-value options '(:struct voicevox-tts-options) 'enable-interrogative-upspeak) enable-interrogative-upspeak)
     (cffi:with-foreign-string (c-text text)
       (let ((result-status
               (get-result-from-code
