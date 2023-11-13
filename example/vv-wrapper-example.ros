@@ -62,9 +62,8 @@ exec ros -Q -- $0 "$@"
               :cpu-num-threads 0
               :load-all-models t
               :open-jtalk-dict-dir open-jtalk-dict-dir-path))
-      (let ((audio-query-result (cl-unofficial-voicevox-core-wrapper:audio-query
+      (let ((audio-query-result (cl-unofficial-voicevox-core-wrapper:create-audio-query
                                  :text text
-                                 :kana nil
                                  :speaker-id speaker-id)))
         (if (equal (cadr (member :result-status audio-query-result)) :voicevox-result-ok)
             (let* ((audio-query (cadr (member :audio-query audio-query-result)))
