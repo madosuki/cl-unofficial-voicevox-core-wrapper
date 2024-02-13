@@ -35,7 +35,6 @@
     :voicevox-result-model-already-loaded-error
     :voicevox-result-style-already-loaded-error
     :voicevox-result-invalid-model-data-error
-    :voicevox-result-unloaded-model-error
     :voicevox-result-load-user-dict-error
     :voicevox-result-save-user-dict-error
     :voicevox-result-unknown-user-dict-word-error
