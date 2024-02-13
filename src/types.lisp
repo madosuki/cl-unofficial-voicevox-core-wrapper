@@ -22,8 +22,8 @@
     :voicevox-result-not-loaded-openjtalk-dict-error
     :voicevox-result-get-supported-device-error
     :voicevox-result-gpu-support-error
-    :voicevox-result-invalid-style-id-error
-    :voicevox-result-invalid-model-id-error
+    :voicevox-result-style-not-found-error
+    :voicevox-result-model-not-found-error
     :voicevox-result-inference-error
     :voicevox-result-extract-full-context-label-error
     :voicevox-result-invalid-utf8-input-error
