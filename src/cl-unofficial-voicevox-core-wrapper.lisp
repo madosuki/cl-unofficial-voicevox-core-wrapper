@@ -12,23 +12,24 @@
   (:export
    :voicevox-result-code-type
    :voicevox-acceleration-mode-type
-   #:initialize
-   #:tts
-   #:audio-query
+   ;; #:initialize
+   ;; #:tts
+   ;; #:audio-query
    #:load-library
    #:close-library
-   #:load-model
+   ;; #:load-model
    #:get-version
-   #:is-gpu-mode
-   #:load-model
-   #:is-model-loaded
-   #:finalize
-   #:get-supported-version
-   #:get-metas-json
-   #:predict-duration
-   #:predict-intonation
-   #:decode
-   #:synthesis))
+   ;; #:is-gpu-mode
+   ;; #:load-model
+   ;; #:is-model-loaded
+   ;; #:finalize
+   ;; #:get-supported-version
+   ;; #:get-metas-json
+   ;; #:predict-duration
+   ;; #:predict-intonation
+   ;; #:decode
+   ;; #:synthesis
+   ))
 (in-package :cl-unofficial-voicevox-core-wrapper)
 
 (cffi:defcenum voicevox-acceleration-mode
@@ -81,7 +82,7 @@
   (filename (:pointer :char)))
 
 (cffi:defcstruct voicevox-initialize-optons
-  (acceleration_mode voicevox-acceleration-mode-enum)
+  (acceleration_mode :int)
   (cpu-num-threads :uint16))
 
 (cffi:defctype voicevox-model-id (:pointer (:array :uint8 16)))
@@ -102,9 +103,9 @@
 
 ;; if defined VOICEVOX_LOAD_ONNXRUNTIME
 (cffi:defcfun ("voicevox_get_onnxruntime_lib_versioned_filename" vv-get-onnxruntime-lib-versioned-filename)
-    (:pointer :char))
+    :string)
 (cffi:defcfun ("voicevox_get_onnxruntime_lib_unversioned_filename" vv-get-onnxruntime-lib-unversioned-filename)
-    (:pointer :char))
+    :string)
 ;; endif
 
 (cffi:defcfun ("voicevox_make_default_load_onnxruntime_options" vv-make-default-load-onnxruntime-options)
@@ -141,7 +142,7 @@
 (cffi:defcfun ("voievox_make_default_initialize_options" vv-make-default-initialize-options)
     (:struct voicevox-initialize-optons))
 
-(cffi:defcfun ("voicevox_get_version" vv-get-version) (:pointer (:char)))
+(cffi:defcfun ("voicevox_get_version" vv-get-version) :string)
 
 (cffi:defcfun ("voicevox_audio_query_create_from_accent_phrase" vv-audio-query-create-from-accent-phrase) :int
   (accent-phrase-json (:pointer :char))
@@ -149,19 +150,19 @@
 
 (cffi:defcfun ("voicevox_voice_model_file_open" vv-voice-model-file-open) :int
   (path (:pointer :char))
-  (out-model (:pointer (:pointer (:struct voicevox-model-file)))))
+  (out-model (:pointer (:pointer (:struct voicevox-voice-model-file)))))
 
 (cffi:defcfun ("voicevox_voice_model_file_id" vv-voice-model-file-id) :void
-  (model (:pointer (:struct voicevox-model-file)))
+  (model (:pointer (:struct voicevox-voice-model-file)))
   (output-voice-model-id (:pointer (:array :uint8 16))))
 
 (cffi:defcfun ("voicvox_voice_model_file_create_metas_json" vv-voice-model-file-create-metas-json) (:pointer :char)
-  (model (:pointer (:struct voicevox-model-file))))
+  (model (:pointer (:struct voicevox-voice-model-file))))
 
 (cffi:defcfun ("voicevox_voice_model_file_delete" vv-voice-model-file-delete) :void)
 
 (cffi:defcfun ("voicvox_synthesizer_new" vv-synthesizer-new) :int
-  (synthesizer (:pointer (:struct synthesizer)))
+  (synthesizer (:pointer (:struct voicevox-synthesizer)))
   (model (:pointer (:struct voicevox-voice-model-file))))
 
 (cffi:defcfun ("voicevox_synthesizer_unload_voice_model" vv-synthesizer-unload-voice-model) :int
@@ -194,7 +195,7 @@
   (synthesizer (:pointer (:struct voicevox-synthesizer)))
   (text (:pointer :char))
   (style-id voicevox-style-id)
-  (output-qudio-query-json (:pointer (:pointer char))))
+  (output-qudio-query-json (:pointer (:pointer :char))))
 
 (cffi:defcfun ("voicevox_synthesizer_create_accent_phrases_from_kana" vv-synthesizer-create-accent-phrases-from-kana) :int
   (synthesizer (:pointer (:struct voicevox-synthesizer)))
@@ -301,3 +302,12 @@
 (cffi:defcfun ("voicevox_user_dict_delete" vv-user-dict-delete) :void
   (user-dict (:pointer (:struct voicevox-user-dict))))
 
+
+(defun load-library (path)
+  (cffi:load-foreign-library path))
+
+(defun close-library (path)
+  (cffi:close-foreign-library path))
+
+(defun get-version ()
+  (vv-get-version))
