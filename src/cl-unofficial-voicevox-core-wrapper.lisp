@@ -181,7 +181,7 @@
   (synthesizer (:pointer (:struct voicevox-synthesizer))))
 
 (cffi:defcfun ("voicevox_onnxruntime_create_supported_devices_json" vv-onnxruntime-create-supported-devices-json) :int
-  (onnxruntim (:pointer (:struct voicevox-onnxruntime)))
+  (onnxruntime (:pointer (:struct voicevox-onnxruntime)))
   (output-supported-devices-json (:pointer (:pointer :char))))
 
 (cffi:defcfun ("voicevox_synthesizer_create_audio_query_from_kana" vv-synthesizer-create-audio-query-from-kana) :int
@@ -332,20 +332,20 @@
 (defun get-onnxruntime-lib-unversioned-filename ()
   (vv-get-onnxruntime-lib-unversioned-filename))
 
-(defclass onnxruntim-class ()
-  ((onnxruntim-ptr :accessor onnxruntim-ptr :initform (cffi:foreign-alloc '(:pointer (:struct voicevox-onnxruntim))))))
-(defmethod onnxruntim-new ((self onnxruntim-class)
+(defclass onnxruntime-class ()
+  ((onnxruntime-ptr :accessor onnxruntime-ptr :initform (cffi:foreign-alloc '(:pointer (:struct voicevox-onnxruntime))))))
+(defmethod onnxruntime-init ((self onnxruntime-class)
                            &optional (options nil))
   (get-result-from-code
    (vv-onnxruntime-load-once (if options
                                  options
                                  (vv-make-default-load-onnxruntime-options))
-                             (slot-value self 'onnxruntim-ptr))))
+                             (slot-value self 'onnxruntime-ptr))))
 
 (defclass open-jtalk-rc-class ()
   ((open-jtalk-rc-ptr :accessor open-jtalk-rc-ptr :initform (cffi:foreign-alloc '(:pointer (:struct open-jtalk-rc))))))
 
-(defmethod open-jtalk-rc-new ((self open-jtalk-rc-class)
+(defmethod open-jtalk-rc-init ((self open-jtalk-rc-class)
                               open-jtalk-dic-dir)
   (declare (type string open-jtalk-dic-dir))
   (cffi:with-foreign-string (c-open-jtalk-dic-dir open-jtalk-dic-dir)
@@ -380,4 +380,22 @@
       (vv-open-jtalk-rc-analyze (slot-value self 'open-jtalk-rc-ptr) c-text output-accent-phrase-json)
       (let ((accent-phrase-json (cffi:mem-ref output-accent-phrase-json '(:pointer :char))))
         (cffi:foreign-string-to-lisp accent-phrase-json)))))
+
+(defclass voicevox-class ()
+  ((options :accessor options :initform (vv-make-default-initialize-options))
+   (synthesizer :accessor synthesizer :initform (cffi:foreign-alloc '(:pointer voicevox-synthesizer)))))
+
+(defmethod voicevox-synthesizer-init ((self voicevox-class)
+                                      onnxruntim-instance
+                                      open-jtalk-instance)
+  (get-result-from-code
+   (vv-synthesizer-new (cffi:mem-ref
+                        (slot-value onnxruntim-instance 'onnxruntime-ptr)
+                        '(:pointer voicevox-onnxruntime))
+                       (cffi:mem-ref
+                        (slot-value open-jtalk-instance 'open-jtalk-rc-ptr)
+                        '(:pointer open-jtalk-rc))
+                       (slot-value self 'options)
+                       (slot-value self 'synthesizer))))
+
 
