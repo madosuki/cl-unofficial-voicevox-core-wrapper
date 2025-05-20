@@ -17,7 +17,6 @@
    ;; #:audio-query
    #:load-library
    #:close-library
-   ;; #:load-model
    #:get-version
    ;; #:is-gpu-mode
    ;; #:load-model
@@ -311,3 +310,74 @@
 
 (defun get-version ()
   (vv-get-version))
+
+(declaim (inline make-array-from-pointer))
+(defun make-array-from-pointer (target length pointer-type value-type)
+  (let ((result (make-array length)))
+    (loop for i from 0 below length
+          do
+             (let ((tmp (cffi:mem-aref (cffi:mem-aref target pointer-type)
+                                       value-type
+                                       i)))
+               (setf (aref result i) tmp)))
+    result))
+
+(declaim (inline get-result-from-code))
+(defun get-result-from-code (code)
+  (cffi:foreign-enum-keyword 'voicevox-result-code code))
+
+(defun get-onnxruntime-lib-versioned-filename ()
+  (vv-get-onnxruntime-lib-unversioned-filename))
+
+(defun get-onnxruntime-lib-unversioned-filename ()
+  (vv-get-onnxruntime-lib-unversioned-filename))
+
+(defclass onnxruntim-class ()
+  ((onnxruntim-ptr :accessor onnxruntim-ptr :initform (cffi:foreign-alloc '(:pointer (:struct voicevox-onnxruntim))))))
+(defmethod onnxruntim-new ((self onnxruntim-class)
+                           &optional (options nil))
+  (get-result-from-code
+   (vv-onnxruntime-load-once (if options
+                                 options
+                                 (vv-make-default-load-onnxruntime-options))
+                             (slot-value self 'onnxruntim-ptr))))
+
+(defclass open-jtalk-rc-class ()
+  ((open-jtalk-rc-ptr :accessor open-jtalk-rc-ptr :initform (cffi:foreign-alloc '(:pointer (:struct open-jtalk-rc))))))
+
+(defmethod open-jtalk-rc-new ((self open-jtalk-rc-class)
+                              open-jtalk-dic-dir)
+  (declare (type string open-jtalk-dic-dir))
+  (cffi:with-foreign-string (c-open-jtalk-dic-dir open-jtalk-dic-dir)
+    (get-result-from-code
+     (vv-open-jtalk-rc-new c-open-jtalk-dic-dir
+                           (slot-value self 'open-jtalk-rc-ptr)))))
+
+(defmethod open-jtalk-rc-delete ((self open-jtalk-rc-class))
+  (vv-open-jtalk-rc-delete (cffi:mem-ref
+                            (slot-value self 'open-jtalk-rc-ptr)
+                            '(:pointer (:struct open-jtalk-rc)))))
+
+(defmethod open-jtalk-rc-close ((self open-jtalk-rc-class))
+  (unless (cffi:null-pointer-p (slot-value self 'open-jtalk-rc-ptr))
+    (open-jtalk-rc-delete self))
+  (cffi:foreign-free (slot-value self 'open-jtalk-rc-ptr)))
+
+
+(defmethod open-jtalk-rc-use-user-dict ((self open-jtalk-rc-class)
+                                        user-dict-class-instance)
+  (get-result-from-code
+   (vv-open-jtalk-rc-use-user-dict
+    (cffi:mem-ref (slot-value self 'open-jtalk-rc-ptr)
+                  '(:pointer (:struct open-jtalk-rc-class)))
+    (cffi:mem-ref (slot-value user-dict-class-instance 'user-dict)
+                  '(:pointer (:struct voicevox-user-dict))))))
+
+(defmethod open-jtalk-rc-analyze ((self open-jtalk-rc-class)
+                                  text)
+  (cffi:with-foreign-string (c-text text)
+    (cffi:with-foreign-object (output-accent-phrase-json '(:pointer :char))
+      (vv-open-jtalk-rc-analyze (slot-value self 'open-jtalk-rc-ptr) c-text output-accent-phrase-json)
+      (let ((accent-phrase-json (cffi:mem-ref output-accent-phrase-json '(:pointer :char))))
+        (cffi:foreign-string-to-lisp accent-phrase-json)))))
+
