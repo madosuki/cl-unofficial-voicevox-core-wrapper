@@ -574,13 +574,18 @@
   (json-pointer-to-string-and-free
    (vv-synthesizer-create-metas-json (synthesizer-pointer self))))
 
-(defun call-json-output-function (function &rest args)
-  (with-foreign-object (output-json '(:pointer :char))
-    (let ((result (apply function (append args (list output-json)))))
-      (values result
-              (when (eq result :voicevox-result-ok)
-                (json-pointer-to-string-and-free
-                 (mem-ref output-json '(:pointer :char))))))))
+(defmacro call-json-output-function (function &rest args)
+  (let ((output-json (gensym "OUTPUT-JSON-"))
+        (result (gensym "RESULT-"))
+        (function-name (if (and (consp function) (eq (first function) 'function))
+                           (second function)
+                           function)))
+    `(with-foreign-object (,output-json '(:pointer :char))
+       (let ((,result (,function-name ,@args ,output-json)))
+         (values ,result
+                 (when (eq ,result :voicevox-result-ok)
+                   (json-pointer-to-string-and-free
+                    (mem-ref ,output-json '(:pointer :char)))))))))
 
 (defmethod voicevox-synthesizer-create-audio-query ((self voicevox-class) text style-id)
   (with-foreign-string (c-text text)
