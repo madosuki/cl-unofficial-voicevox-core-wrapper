@@ -12,3 +12,6 @@
 
 ## dict files directory
 ~/voicevox_core/0.16.4/voicevox_core/dict/open_jtalk_dic_utf_8-1.11
+
+## onnxruntime path
+~/voicevox_core/0.16.4/voicevox_core/onnxruntime/lib/libvoicevox_onnxruntime.so.1.17.3
