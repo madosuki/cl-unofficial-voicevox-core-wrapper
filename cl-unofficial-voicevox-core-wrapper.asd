@@ -7,5 +7,6 @@
                "cl-unofficial-voicevox-core-wrapper-types")
   :components ((:module "src"
                 :components
-                        ((:file "cl-unofficial-voicevox-core-wrapper")))))
-
+                        ((:file "wrapper")
+                         (:file "cl-unofficial-voicevox-core"
+                          :depends-on ("wrapper"))))))

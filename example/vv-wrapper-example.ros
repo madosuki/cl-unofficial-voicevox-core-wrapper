@@ -19,39 +19,40 @@ exec ros -Q -- $0 "$@"
   (with-open-file (stream filepath
                           :direction :output
                           :if-exists :supersede
-                          :element-type 'unsigned-byte)
+                          :if-does-not-exist :create
+                          :element-type '(unsigned-byte 8))
     (dotimes (n wav-length)
-      (let ((byte (aref wav-bytes n)))
-        (when byte
-          (write-byte byte stream))))))
+      (write-byte (aref wav-bytes n) stream))))
+
+(defun option-value (name argv &optional default)
+  (let ((option (member name argv :test #'equal)))
+    (if option
+        (cadr option)
+        default)))
 
 (defun parse-option (argv)
-  (let ((tmp-text-option (member "--text" argv :test #'equal))
-        (tmp-lib-core-path-option (member "--lib-core-path" argv :test #'equal))
-        (tmp-lib-onnxruntime-path-option (member "--lib-onnxruntime-path" argv :test #'equal))
-        (tmp-open-jtalk-dict-dir-path-option (member "--open-jtalk-dict-dir-path" argv :test #'equal))
-        (tmp-speaker-id-option (member "--speaker-id" argv :test #'equal)))
-    (print argv)
-    (if (or (null tmp-text-option)
-            (null tmp-lib-core-path-option)
-            (null tmp-lib-onnxruntime-path-option)
-            (null tmp-open-jtalk-dict-dir-path-option))
+  (let ((text (option-value "--text" argv))
+        (lib-core-path (option-value "--lib-core-path" argv))
+        (lib-onnxruntime-path (option-value "--lib-onnxruntime-path" argv))
+        (open-jtalk-dict-dir-path (option-value "--open-jtalk-dict-dir-path" argv))
+        (vvm-path (option-value "--vvm-path" argv))
+        (output-file (option-value "--output-file" argv "output.wav"))
+        (speaker-id (parse-integer (option-value "--speaker-id" argv "0") :junk-allowed t)))
+    (if (or (null text)
+            (null lib-core-path)
+            (null lib-onnxruntime-path)
+            (null open-jtalk-dict-dir-path)
+            (null vvm-path)
+            (null speaker-id))
         nil
-        (let ((speaker-id-integer (if tmp-speaker-id-option
-                                      (parse-integer (cadr tmp-speaker-id-option) :junk-allowed t)
-                                      nil)))
-          (if speaker-id-integer
-              (list
-               :text (cadr tmp-text-option)
-               :lib-core-path (cadr tmp-lib-core-path-option)
-               :lib-onnxruntime (cadr tmp-lib-onnxruntime-path-option)
-               :open-jtalk-dict-dir-path (cadr tmp-open-jtalk-dict-dir-path-option)
-               :speaker-id speaker-id-integer)
-              (list
-               :text (cadr tmp-text-option)
-               :lib-core-path (cadr tmp-lib-core-path-option)
-               :lib-onnxruntime (cadr tmp-lib-onnxruntime-path-option)
-               :open-jtalk-dict-dir-path (cadr tmp-open-jtalk-dict-dir-path-option)))))))
+        (list
+         :text text
+         :lib-core-path lib-core-path
+         :lib-onnxruntime lib-onnxruntime-path
+         :open-jtalk-dict-dir-path open-jtalk-dict-dir-path
+         :vvm-path vvm-path
+         :output-file output-file
+         :speaker-id speaker-id))))
 
 (defmacro with-open-libs (lib-core-path lib-onnxruntime-path &body body)
   `(unwind-protect
@@ -63,47 +64,59 @@ exec ros -Q -- $0 "$@"
        (close-library ,lib-core-path)
        (close-library ,lib-onnxruntime-path))))
 
+(defun require-ok (result context)
+  (unless (eq result :voicevox-result-ok)
+    (error "~A failed: ~A (~A)"
+           context
+           result
+           (cl-unofficial-voicevox-core-wrapper:error-result-to-message result))))
+
+(defmacro with-close ((var close-form) &body body)
+  `(let (,var)
+     (unwind-protect
+          (progn ,@body)
+       (when ,var
+         ,close-form))))
+
 (defun main (&rest argv)
   (declare (ignorable argv))
   (let ((parsed (parse-option argv)))
     (unless parsed
-      (format t "require --text and --lib-core-path , --lib-onnxruntime-path and --open-jtalk-dict-dir-path. --speaker-id is optionaly.~%")
+      (format t "require --text, --lib-core-path, --lib-onnxruntime-path, --open-jtalk-dict-dir-path and --vvm-path. --speaker-id and --output-file are optional.~%")
       (return-from main nil))
     (let* ((text (cadr (member :text parsed)))
            (lib-core-path (cadr (member :lib-core-path parsed)))
            (lib-onnxruntime-path (cadr (member :lib-onnxruntime parsed)))
            (open-jtalk-dict-dir-path (cadr (member :open-jtalk-dict-dir-path parsed)))
+           (vvm-path (cadr (member :vvm-path parsed)))
+           (output-file (cadr (member :output-file parsed)))
            (speaker-id (cadr (member :speaker-id parsed))))
-      (unless speaker-id
-        (setq speaker-id 0))
-      (load-library lib-core-path)
-      (load-library lib-onnxruntime-path)
-      (format t "version: ~A~%" (cl-unofficial-voicevox-core-wrapper:get-version))
-      ;; (with-open-libs lib-core-path lib-onnxruntime-path
-      ;;   (format t "version: ~A~%" (cl-unofficial-voicevox-core-wrapper:get-version)))
-      ;; (print (cl-unofficial-voicevox-core-wrapper:initialize
-      ;;         :acceleration-mode :voicevox-acceleration-mode-cpu
-      ;;         :cpu-num-threads 0
-      ;;         :load-all-models t
-      ;;         :open-jtalk-dict-dir open-jtalk-dict-dir-path))
-      ;; (let ((audio-query-result (cl-unofficial-voicevox-core-wrapper:audio-query
-      ;;                            :text text
-      ;;                            :kana nil
-      ;;                            :speaker-id speaker-id)))
-      ;;   (if (equal (cadr (member :result-status audio-query-result)) :voicevox-result-ok)
-      ;;       (let* ((audio-query (cadr (member :audio-query audio-query-result)))
-      ;;              (result (cl-unofficial-voicevox-core-wrapper:synthesis
-      ;;                       :audio-query-json audio-query
-      ;;                       :speaker-id speaker-id
-      ;;                       :enable-interrogative-upspeak nil)))
-      ;;         (if (equal (cadr (member :result-status result)) :voicevox-result-ok)
-      ;;             (write-wav-file
-      ;;              :filepath "a.wav"
-      ;;              :wav-length (cadr (member :wav-length result))
-      ;;              :wav-bytes (cadr (member :wav-bytes result)))
-      ;;             (print (cadr (member :result-status result)))))
-      ;;       (print (cadr (member :result-status audio-query-result))))
-      ;;   )
-      ;; (cl-unofficial-voicevox-core-wrapper:close-library library)))
-      )))
+      (with-open-libs lib-core-path lib-onnxruntime-path
+        (format t "version: ~A~%" (cl-unofficial-voicevox-core-wrapper:get-version))
+        (with-close (open-jtalk (open-jtalk-rc-close open-jtalk))
+          (with-close (voice-model-file (voice-model-file-close voice-model-file))
+            (with-close (voicevox (voicevox-synthesizer-delete voicevox))
+              (let ((onnxruntime (make-instance 'onnxruntime-class))
+                    (open-jtalk-instance (make-instance 'open-jtalk-rc-class))
+                    (voice-model-file-instance (make-instance 'voice-model-file-class))
+                    (voicevox-instance (make-instance 'voicevox-class)))
+                (require-ok (onnxruntime-init onnxruntime) "onnxruntime-init")
+                (require-ok (open-jtalk-rc-init open-jtalk-instance open-jtalk-dict-dir-path)
+                            "open-jtalk-rc-init")
+                (setf open-jtalk open-jtalk-instance)
+                (require-ok (voicevox-synthesizer-init voicevox-instance onnxruntime open-jtalk)
+                            "voicevox-synthesizer-init")
+                (setf voicevox voicevox-instance)
+                (require-ok (voice-model-file-open voice-model-file-instance vvm-path)
+                            "voice-model-file-open")
+                (setf voice-model-file voice-model-file-instance)
+                (require-ok (voicevox-synthesizer-load-voice-model voicevox voice-model-file)
+                            "voicevox-synthesizer-load-voice-model")
+                (multiple-value-bind (result wav-bytes wav-length)
+                    (voicevox-synthesizer-tts voicevox text speaker-id)
+                  (require-ok result "voicevox-synthesizer-tts")
+                  (write-wav-file :filepath output-file
+                                  :wav-bytes wav-bytes
+                                  :wav-length wav-length)
+                  (format t "wrote: ~A (~A bytes)~%" output-file wav-length))))))))))
 ;;; vim: set ft=lisp lisp:

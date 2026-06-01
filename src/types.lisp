@@ -1,7 +1,8 @@
 (in-package :cl-user)
 (defpackage cl-unofficial-voicevox-core-wrapper.types
-  (:use :cl :cffi)
-  (:export :uint16
+  (:use :cl)
+  (:export :uint8
+           :uint16
            :uint32
            :uintptr
            :voicevox-result-code-type
