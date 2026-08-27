@@ -10,7 +10,8 @@
    :uint32
    :voicevox-result-code-type
    :voicevox-acceleration-mode-type
-   :voicevox-user-dict-word-type-type)
+   :voicevox-user-dict-word-type-type
+   :voicevox-on-existing-voice-model-id-type)
   (:export
    :uint8
    :uint16
@@ -23,6 +24,7 @@
    :voicevox-user-dict-word-type
    :voicevox-load-onnxruntime-options
    :voicevox-initialize-options
+   :voicevox-load-voice-model-options
    :voicevox-synthesis-options
    :voicevox-tts-options
    :voicevox-user-dict-word
@@ -33,8 +35,10 @@
    :get-version
    :get-result-from-code
    :error-result-to-message
-   :get-onnxruntime-lib-versioned-filename
-   :get-onnxruntime-lib-unversioned-filename
+   :get-onnxruntime-lib-recommend-versioned-filename
+   :get-onnxruntime-lib-recommend-unversioned-filename
+   :vv-get-onnxruntime-lib-min-required-minor-version
+   :vv-get-onnxruntime-lib-max-supported-minor-version
    :onnxruntime-class
    :onnxruntime-init
    :onnxruntime-get
@@ -49,6 +53,7 @@
    :voicevox-class
    :voicevox-synthesizer-init
    :voicevox-synthesizer-delete
+   :vv-make-default-load-voice-model-options
    :voicevox-synthesizer-load-voice-model
    :voicevox-synthesizer-unload-voice-model
    :voicevox-synthesizer-is-gpu-mode
@@ -157,8 +162,13 @@
   (:voicevox-acceleration-mode-cpu 1)
   (:voicevox-acceleration-mode-gpu 2))
 
+(cffi:defcenum voicevox-on-existing-voice-model-id
+  (:voicevox-on-existing-voice-model-id-error 0)
+  (:voicevox-on-existing-voice-model-id-reload 1)
+  (:voicevox-on-existing-voice-model-id-skip 2))
+
 (cffi:defcenum voicevox-result-code
-  (:voicevox-result-ok 0)
+    (:voicevox-result-ok 0)
   (:voicevox-result-not-loaded-openjtalk-dict-error 1)
   (:voicevox-result-get-supported-devices-error 3)
   (:voicevox-result-gpu-support-error 4)
@@ -173,7 +183,7 @@
   (:voicevox-result-invalid-accent-phrase-error 15)
   (:voicevox-result-open-zip-file-error 16)
   (:voicevox-result-read-zip-entry-error 17)
-  (:voicevox-result-invalid-model-header-error 28)
+  (:voicevox-result-invalid-model-format-error 28)
   (:voicevox-result-model-already-loaded-error 18)
   (:voicevox-result-style-already-loaded-error 26)
   (:voicevox-result-invalid-model-data-error 27)
@@ -210,6 +220,9 @@
   (acceleration-mode voicevox-acceleration-mode)
   (cpu-num-threads :uint16))
 
+(cffi:defcstruct voicevox-load-voice-model-options
+  (on-existing voicevox-on-existing-voice-model-id))
+
 (cffi:defctype voicevox-voice-model-id (:pointer (:array :uint8 16)))
 (cffi:defctype voicevox-style-id :uint32)
 
@@ -224,10 +237,12 @@
   (pronunciation (:pointer :char))
   (accent-type :uintptr)
   (word-type voicevox-user-dict-word-type)
-  (priority :uint32))
+  (priority :uint8))
 
-(cffi:defcfun ("voicevox_get_onnxruntime_lib_versioned_filename" vv-get-onnxruntime-lib-versioned-filename) :string)
-(cffi:defcfun ("voicevox_get_onnxruntime_lib_unversioned_filename" vv-get-onnxruntime-lib-unversioned-filename) :string)
+(cffi:defcfun ("voicevox_get_onnxruntime_lib_recommended_versioned_filename" vv-get-onnxruntime-lib-recommended-versioned-filename) :string)
+(cffi:defcfun ("voicevox_get_onnxruntime_lib_recommended_unversioned_filename" vv-get-onnxruntime-lib-recommended-unversioned-filename) :string)
+(cffi:defcfun ("voicevox_get_onnxruntime_lib_min_required_minor_version" vv-get-onnxruntime-lib-min-required-minor-version) :uint32)
+(cffi:defcfun ("voicevox_get_onnxruntime_lib_max_supported_minor_version" vv-get-onnxruntime-lib-max-supported-minor-version) :uint32)
 (cffi:defcfun ("voicevox_make_default_load_onnxruntime_options" vv-make-default-load-onnxruntime-options)
     (:struct voicevox-load-onnxruntime-options))
 (cffi:defcfun ("voicevox_onnxruntime_get" vv-onnxruntime-get) (:pointer (:struct voicevox-onnxruntime)))
@@ -293,9 +308,11 @@
   (out-synthesizer (:pointer (:pointer (:struct voicevox-synthesizer)))))
 (cffi:defcfun ("voicevox_synthesizer_delete" vv-synthesizer-delete) :void
   (synthesizer (:pointer (:struct voicevox-synthesizer))))
+(cffi:defcfun ("voicevox_make_default_load_voice_model_options" vv-make-default-load-voice-model-options) (:struct voicevox-load-voice-model-options))
 (cffi:defcfun ("voicevox_synthesizer_load_voice_model" vv-synthesizer-load-voice-model) voicevox-result-code
   (synthesizer (:pointer (:struct voicevox-synthesizer)))
-  (model (:pointer (:struct voicevox-voice-model-file))))
+  (model (:pointer (:struct voicevox-voice-model-file)))
+  (options (:struct voicevox-load-voice-model-options)))
 (cffi:defcfun ("voicevox_synthesizer_unload_voice_model" vv-synthesizer-unload-voice-model) voicevox-result-code
   (synthesizer (:pointer (:struct voicevox-synthesizer)))
   (model-id voicevox-voice-model-id))
@@ -432,3 +449,4 @@
   (path (:pointer :char)))
 (cffi:defcfun ("voicevox_user_dict_delete" vv-user-dict-delete) :void
   (user-dict (:pointer (:struct voicevox-user-dict))))
+

@@ -7,6 +7,7 @@
            :uintptr
            :voicevox-result-code-type
            :voicevox-acceleration-mode-type
+           :voicevox-on-existing-voice-model-id-type
            :voicevox-user-dict-word-type-type))
 (in-package :cl-unofficial-voicevox-core-wrapper.types)
 
@@ -18,6 +19,11 @@
 (deftype voicevox-acceleration-mode-type ()
   '(member :voicevox-acceleration-mode-auto :voicevox-acceleration-mode-cpu :voicevox-acceleration-mode-gpu))
 
+(deftype voicevox-on-existing-voice-model-id-type ()
+  '(member
+    :voicevox-on-existing-voice-model-id-error
+    :voicevox-on-existing-voice-model-id-reload
+    :voicevox-on-existing-voice-model-id-skip))
 
 (deftype voicevox-result-code-type ()
   '(member
@@ -36,7 +42,7 @@
     :voicevox-result-invalid-accent-phrase-error
     :voicevox-result-open-zip-file-error
     :voicevox-result-read-zip-entry-error
-    :voicevox-result-invalid-model-header-error
+    :voicevox-result-invalid-model-format-error
     :voicevox-result-model-already-loaded-error
     :voicevox-result-style-already-loaded-error
     :voicevox-result-invalid-model-data-error
