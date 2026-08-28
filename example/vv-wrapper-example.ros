@@ -101,6 +101,7 @@ exec ros -Q -- $0 "$@"
                     (open-jtalk-instance (make-instance 'open-jtalk-rc-class))
                     (voice-model-file-instance (make-instance 'voice-model-file-class))
                     (voicevox-instance (make-instance 'voicevox-class)))
+                (cl-unofficial-voicevox-core-wrapper:onnxruntime-set-filename-to-options onnxruntime lib-onnxruntime-path)
                 (require-ok (onnxruntime-init onnxruntime) "onnxruntime-init")
                 (require-ok (open-jtalk-rc-init open-jtalk-instance open-jtalk-dict-dir-path)
                             "open-jtalk-rc-init")

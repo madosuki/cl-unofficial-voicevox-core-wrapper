@@ -247,9 +247,9 @@
     :initform (cffi:foreign-alloc '(:pointer (:struct voicevox-onnxruntime))))
    (options :accessor options :initform (vv-make-default-load-onnxruntime-options))))
 
-(defmethod onnxruntime-set-filename-to-options ((self onnxruntime-class) file-name)
-  (setf (cffi:foreign-slot-value '(:struct voicevox-load-onnxruntime-options) (options self))
-        file-name))
+(defmethod onnxruntime-set-filename-to-options ((self onnxruntime-class) filename)
+  (setf (cffi:foreign-slot-value (options self) '(:struct voicevox-load-onnxruntime-options) 'filename)
+        (cffi:foreign-string-alloc filename)))
 
 (defmethod onnxruntime-init ((self onnxruntime-class))
   (get-result-from-code
