@@ -25,10 +25,12 @@
               gcc
               pkg-config
               libffi.dev
+              stdenv.cc.cc.lib
             ];
 
             LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
               pkgs.libffi
+              pkgs.stdenv.cc.cc.lib
             ];
           };
         });

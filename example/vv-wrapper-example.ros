@@ -91,6 +91,7 @@ exec ros -Q -- $0 "$@"
            (vvm-path (cadr (member :vvm-path parsed)))
            (output-file (cadr (member :output-file parsed)))
            (speaker-id (cadr (member :speaker-id parsed))))
+      (format t "onnxruntime lib path: ~A~%" lib-onnxruntime-path)
       (with-open-libs lib-core-path lib-onnxruntime-path
         (format t "version: ~A~%" (cl-unofficial-voicevox-core-wrapper:get-version))
         (with-close (open-jtalk (open-jtalk-rc-close open-jtalk))
