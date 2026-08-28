@@ -11,91 +11,55 @@
    :voicevox-user-dict-word-type-type
    :voicevox-on-existing-voice-model-id-type)
   (:export
+   ;; import from types.lisp
    :uint8
    :uint16
    :uint32
    :voicevox-result-code-type
    :voicevox-acceleration-mode-type
    :voicevox-user-dict-word-type-type
+   :voicevox-on-existing-voice-model-id-type
+
+   ;; enums
    :voicevox-acceleration-mode
+   :voicevox-on-existing-voice-model-id
    :voicevox-result-code
    :voicevox-user-dict-word-type
+
+   ;; structs
+   :open-jtalk-rc
+   :voicevox-onnxruntime
+   :voicevox-synthesizer
+   :voicevox-user-dict
+   :voicevox-voice-model-file
    :voicevox-load-onnxruntime-options
    :voicevox-initialize-options
    :voicevox-load-voice-model-options
    :voicevox-synthesis-options
    :voicevox-tts-options
    :voicevox-user-dict-word
-   :voicevox-style-id
+
+   ;; typedefs
    :voicevox-voice-model-id
-   :get-result-from-code
-   :error-result-to-message
-   :get-onnxruntime-lib-recommend-versioned-filename
-   :get-onnxruntime-lib-recommend-unversioned-filename
+   :voicevox-style-id
+
+   ;; ONNX Runtime
+   :vv-get-onnxruntime-lib-recommended-versioned-filename
+   :vv-get-onnxruntime-lib-recommended-unversioned-filename
    :vv-get-onnxruntime-lib-min-required-minor-version
    :vv-get-onnxruntime-lib-max-supported-minor-version
-   :onnxruntime-class
-   :onnxruntime-init
-   :onnxruntime-get
-   :onnxruntime-ptr
-   :open-jtalk-rc-class
-   :open-jtalk-rc-init
-   :open-jtalk-rc-delete
-   :open-jtalk-rc-close
-   :open-jtalk-rc-use-user-dict
-   :open-jtalk-rc-analyze
-   :open-jtalk-rc-ptr
-   :voicevox-class
-   :voicevox-synthesizer-init
-   :voicevox-synthesizer-delete
-   :vv-make-default-load-voice-model-options
-   :voicevox-synthesizer-load-voice-model
-   :voicevox-synthesizer-unload-voice-model
-   :voicevox-synthesizer-is-gpu-mode
-   :voicevox-synthesizer-is-loaded-voice-model
-   :voicevox-synthesizer-create-metas-json
-   :voicevox-synthesizer-create-audio-query
-   :voicevox-synthesizer-create-audio-query-from-kana
-   :voicevox-synthesizer-create-accent-phrases
-   :voicevox-synthesizer-create-accent-phrases-from-kana
-   :voicevox-synthesizer-replace-mora-data
-   :voicevox-synthesizer-replace-phoneme-length
-   :voicevox-synthesizer-replace-mora-pitch
-   :voicevox-synthesizer-synthesis
-   :voicevox-synthesizer-tts
-   :voicevox-synthesizer-tts-from-kana
-   :voicevox-synthesizer-create-sing-frame-audio-query
-   :voicevox-synthesizer-create-sing-frame-f0
-   :voicevox-synthesizer-create-sing-frame-volume
-   :voicevox-synthesizer-frame-synthesis
-   :voice-model-file-class
-   :voice-model-file-open
-   :voice-model-file-id
-   :voice-model-file-create-metas-json
-   :voice-model-file-delete
-   :voice-model-file-close
-   :voice-model-file-ptr
-   :user-dict-class
-   :user-dict-new
-   :user-dict-load
-   :user-dict-add-word
-   :user-dict-update-word
-   :user-dict-remove-word
-   :user-dict-to-json
-   :user-dict-import
-   :user-dict-save
-   :user-dict-delete
-   :user-dict-ptr
-   :vv-get-onnxruntime-lib-versioned-filename
-   :vv-get-onnxruntime-lib-unversioned-filename
    :vv-make-default-load-onnxruntime-options
    :vv-onnxruntime-get
    :vv-onnxruntime-load-once
    :vv-onnxruntime-init-once
+
+   ;; Open JTalk
    :vv-open-jtalk-rc-new
    :vv-open-jtalk-rc-use-user-dict
    :vv-open-jtalk-rc-analyze
    :vv-open-jtalk-rc-delete
+
+   ;; general
    :vv-make-default-initialize-options
    :vv-get-version
    :vv-audio-query-create-from-accent-phrases
@@ -107,12 +71,17 @@
    :vv-frame-audio-query-validate
    :vv-frame-phoneme-validate
    :vv-ensure-compatible
+
+   ;; Voice model file
    :vv-voice-model-file-open
    :vv-voice-model-file-id
    :vv-voice-model-file-create-metas-json
    :vv-voice-model-file-delete
+
+   ;; Synthesizer
    :vv-synthesizer-new
    :vv-synthesizer-delete
+   :vv-make-default-load-voice-model-options
    :vv-synthesizer-load-voice-model
    :vv-synthesizer-unload-voice-model
    :vv-synthesizer-get-onnxruntime
@@ -136,9 +105,13 @@
    :vv-synthesizer-create-sing-frame-f0
    :vv-synthesizer-create-sing-frame-volume
    :vv-synthesizer-frame-synthesis
+
+   ;; memory
    :vv-json-free
    :vv-wav-free
    :vv-error-result-to-message
+
+   ;; User dictionary
    :vv-user-dict-word-make
    :vv-user-dict-new
    :vv-user-dict-load
@@ -162,7 +135,7 @@
   (:voicevox-on-existing-voice-model-id-skip 2))
 
 (cffi:defcenum voicevox-result-code
-    (:voicevox-result-ok 0)
+  (:voicevox-result-ok 0)
   (:voicevox-result-not-loaded-openjtalk-dict-error 1)
   (:voicevox-result-get-supported-devices-error 3)
   (:voicevox-result-gpu-support-error 4)
@@ -243,16 +216,16 @@
 (cffi:defcfun ("voicevox_onnxruntime_load_once" vv-onnxruntime-load-once) :int
   (options (:struct voicevox-load-onnxruntime-options))
   (out-onnxruntime (:pointer (:pointer (:struct voicevox-onnxruntime)))))
-(cffi:defcfun ("voicevox_onnxruntime_init_once" vv-onnxruntime-init-once) voicevox-result-code
+(cffi:defcfun ("voicevox_onnxruntime_init_once" vv-onnxruntime-init-once) :int
   (out-onnxruntime (:pointer (:pointer (:struct voicevox-onnxruntime)))))
 
-(cffi:defcfun ("voicevox_open_jtalk_rc_new" vv-open-jtalk-rc-new) voicevox-result-code
+(cffi:defcfun ("voicevox_open_jtalk_rc_new" vv-open-jtalk-rc-new) :int
   (open-jtalk-dic-dir (:pointer :char))
   (out-open-jtalk (:pointer (:pointer (:struct open-jtalk-rc)))))
-(cffi:defcfun ("voicevox_open_jtalk_rc_use_user_dict" vv-open-jtalk-rc-use-user-dict) voicevox-result-code
+(cffi:defcfun ("voicevox_open_jtalk_rc_use_user_dict" vv-open-jtalk-rc-use-user-dict) :int
   (open-jtalk (:pointer (:struct open-jtalk-rc)))
   (user-dict (:pointer (:struct voicevox-user-dict))))
-(cffi:defcfun ("voicevox_open_jtalk_rc_analyze" vv-open-jtalk-rc-analyze) voicevox-result-code
+(cffi:defcfun ("voicevox_open_jtalk_rc_analyze" vv-open-jtalk-rc-analyze) :int
   (open-jtalk (:pointer (:struct open-jtalk-rc)))
   (text (:pointer :char))
   (output-accent-phrases-json (:pointer (:pointer :char))))
@@ -263,28 +236,28 @@
     (:struct voicevox-initialize-options))
 (cffi:defcfun ("voicevox_get_version" vv-get-version) :string)
 
-(cffi:defcfun ("voicevox_audio_query_create_from_accent_phrases" vv-audio-query-create-from-accent-phrases) voicevox-result-code
+(cffi:defcfun ("voicevox_audio_query_create_from_accent_phrases" vv-audio-query-create-from-accent-phrases) :int
   (accent-phrases-json (:pointer :char))
   (output-audio-query-json (:pointer (:pointer :char))))
-(cffi:defcfun ("voicevox_audio_query_validate" vv-audio-query-validate) voicevox-result-code
+(cffi:defcfun ("voicevox_audio_query_validate" vv-audio-query-validate) :int
   (audio-query-json (:pointer :char)))
-(cffi:defcfun ("voicevox_accent_phrase_validate" vv-accent-phrase-validate) voicevox-result-code
+(cffi:defcfun ("voicevox_accent_phrase_validate" vv-accent-phrase-validate) :int
   (accent-phrase-json (:pointer :char)))
-(cffi:defcfun ("voicevox_mora_validate" vv-mora-validate) voicevox-result-code
+(cffi:defcfun ("voicevox_mora_validate" vv-mora-validate) :int
   (mora-json (:pointer :char)))
-(cffi:defcfun ("voicevox_score_validate" vv-score-validate) voicevox-result-code
+(cffi:defcfun ("voicevox_score_validate" vv-score-validate) :int
   (score-json (:pointer :char)))
-(cffi:defcfun ("voicevox_note_validate" vv-note-validate) voicevox-result-code
+(cffi:defcfun ("voicevox_note_validate" vv-note-validate) :int
   (note-json (:pointer :char)))
-(cffi:defcfun ("voicevox_frame_audio_query_validate" vv-frame-audio-query-validate) voicevox-result-code
+(cffi:defcfun ("voicevox_frame_audio_query_validate" vv-frame-audio-query-validate) :int
   (frame-audio-query-json (:pointer :char)))
-(cffi:defcfun ("voicevox_frame_phoneme_validate" vv-frame-phoneme-validate) voicevox-result-code
+(cffi:defcfun ("voicevox_frame_phoneme_validate" vv-frame-phoneme-validate) :int
   (frame-phoneme-json (:pointer :char)))
-(cffi:defcfun ("voicevox_ensure_compatible" vv-ensure-compatible) voicevox-result-code
+(cffi:defcfun ("voicevox_ensure_compatible" vv-ensure-compatible) :int
   (score-json (:pointer :char))
   (frame-audio-query-json (:pointer :char)))
 
-(cffi:defcfun ("voicevox_voice_model_file_open" vv-voice-model-file-open) voicevox-result-code
+(cffi:defcfun ("voicevox_voice_model_file_open" vv-voice-model-file-open) :int
   (path (:pointer :char))
   (out-model (:pointer (:pointer (:struct voicevox-voice-model-file)))))
 (cffi:defcfun ("voicevox_voice_model_file_id" vv-voice-model-file-id) :void
@@ -303,11 +276,11 @@
 (cffi:defcfun ("voicevox_synthesizer_delete" vv-synthesizer-delete) :void
   (synthesizer (:pointer (:struct voicevox-synthesizer))))
 (cffi:defcfun ("voicevox_make_default_load_voice_model_options" vv-make-default-load-voice-model-options) (:struct voicevox-load-voice-model-options))
-(cffi:defcfun ("voicevox_synthesizer_load_voice_model" vv-synthesizer-load-voice-model) voicevox-result-code
+(cffi:defcfun ("voicevox_synthesizer_load_voice_model" vv-synthesizer-load-voice-model) :int
   (synthesizer (:pointer (:struct voicevox-synthesizer)))
   (model (:pointer (:struct voicevox-voice-model-file)))
   (options (:struct voicevox-load-voice-model-options)))
-(cffi:defcfun ("voicevox_synthesizer_unload_voice_model" vv-synthesizer-unload-voice-model) voicevox-result-code
+(cffi:defcfun ("voicevox_synthesizer_unload_voice_model" vv-synthesizer-unload-voice-model) :int
   (synthesizer (:pointer (:struct voicevox-synthesizer)))
   (model-id voicevox-voice-model-id))
 (cffi:defcfun ("voicevox_synthesizer_get_onnxruntime" vv-synthesizer-get-onnxruntime) (:pointer (:struct voicevox-onnxruntime))
@@ -319,40 +292,40 @@
   (model-id voicevox-voice-model-id))
 (cffi:defcfun ("voicevox_synthesizer_create_metas_json" vv-synthesizer-create-metas-json) (:pointer :char)
   (synthesizer (:pointer (:struct voicevox-synthesizer))))
-(cffi:defcfun ("voicevox_onnxruntime_create_supported_devices_json" vv-onnxruntime-create-supported-devices-json) voicevox-result-code
+(cffi:defcfun ("voicevox_onnxruntime_create_supported_devices_json" vv-onnxruntime-create-supported-devices-json) :int
   (onnxruntime (:pointer (:struct voicevox-onnxruntime)))
   (output-supported-devices-json (:pointer (:pointer :char))))
-(cffi:defcfun ("voicevox_synthesizer_create_audio_query_from_kana" vv-synthesizer-create-audio-query-from-kana) voicevox-result-code
+(cffi:defcfun ("voicevox_synthesizer_create_audio_query_from_kana" vv-synthesizer-create-audio-query-from-kana) :int
   (synthesizer (:pointer (:struct voicevox-synthesizer)))
   (kana (:pointer :char))
   (style-id voicevox-style-id)
   (output-audio-query-json (:pointer (:pointer :char))))
-(cffi:defcfun ("voicevox_synthesizer_create_audio_query" vv-synthesizer-create-audio-query) voicevox-result-code
+(cffi:defcfun ("voicevox_synthesizer_create_audio_query" vv-synthesizer-create-audio-query) :int
   (synthesizer (:pointer (:struct voicevox-synthesizer)))
   (text (:pointer :char))
   (style-id voicevox-style-id)
   (output-audio-query-json (:pointer (:pointer :char))))
-(cffi:defcfun ("voicevox_synthesizer_create_accent_phrases_from_kana" vv-synthesizer-create-accent-phrases-from-kana) voicevox-result-code
+(cffi:defcfun ("voicevox_synthesizer_create_accent_phrases_from_kana" vv-synthesizer-create-accent-phrases-from-kana) :int
   (synthesizer (:pointer (:struct voicevox-synthesizer)))
   (kana (:pointer :char))
   (style-id voicevox-style-id)
   (output-accent-phrases-json (:pointer (:pointer :char))))
-(cffi:defcfun ("voicevox_synthesizer_create_accent_phrases" vv-synthesizer-create-accent-phrases) voicevox-result-code
+(cffi:defcfun ("voicevox_synthesizer_create_accent_phrases" vv-synthesizer-create-accent-phrases) :int
   (synthesizer (:pointer (:struct voicevox-synthesizer)))
   (text (:pointer :char))
   (style-id voicevox-style-id)
   (output-accent-phrases-json (:pointer (:pointer :char))))
-(cffi:defcfun ("voicevox_synthesizer_replace_mora_data" vv-synthesizer-replace-mora-data) voicevox-result-code
+(cffi:defcfun ("voicevox_synthesizer_replace_mora_data" vv-synthesizer-replace-mora-data) :int
   (synthesizer (:pointer (:struct voicevox-synthesizer)))
   (accent-phrases-json (:pointer :char))
   (style-id voicevox-style-id)
   (output-accent-phrases-json (:pointer (:pointer :char))))
-(cffi:defcfun ("voicevox_synthesizer_replace_phoneme_length" vv-synthesizer-replace-phoneme-length) voicevox-result-code
+(cffi:defcfun ("voicevox_synthesizer_replace_phoneme_length" vv-synthesizer-replace-phoneme-length) :int
   (synthesizer (:pointer (:struct voicevox-synthesizer)))
   (accent-phrases-json (:pointer :char))
   (style-id voicevox-style-id)
   (output-accent-phrases-json (:pointer (:pointer :char))))
-(cffi:defcfun ("voicevox_synthesizer_replace_mora_pitch" vv-synthesizer-replace-mora-pitch) voicevox-result-code
+(cffi:defcfun ("voicevox_synthesizer_replace_mora_pitch" vv-synthesizer-replace-mora-pitch) :int
   (synthesizer (:pointer (:struct voicevox-synthesizer)))
   (accent-phrases-json (:pointer :char))
   (style-id voicevox-style-id)
@@ -382,24 +355,24 @@
   (options (:struct voicevox-tts-options))
   (output-wav-length (:pointer :uintptr))
   (output-wav (:pointer (:pointer :uint8))))
-(cffi:defcfun ("voicevox_synthesizer_create_sing_frame_audio_query" vv-synthesizer-create-sing-frame-audio-query) voicevox-result-code
+(cffi:defcfun ("voicevox_synthesizer_create_sing_frame_audio_query" vv-synthesizer-create-sing-frame-audio-query) :int
   (synthesizer (:pointer (:struct voicevox-synthesizer)))
   (score-json (:pointer :char))
   (style-id voicevox-style-id)
   (output-frame-audio-query-json (:pointer (:pointer :char))))
-(cffi:defcfun ("voicevox_synthesizer_create_sing_frame_f0" vv-synthesizer-create-sing-frame-f0) voicevox-result-code
+(cffi:defcfun ("voicevox_synthesizer_create_sing_frame_f0" vv-synthesizer-create-sing-frame-f0) :int
   (synthesizer (:pointer (:struct voicevox-synthesizer)))
   (score-json (:pointer :char))
   (frame-audio-query-json (:pointer :char))
   (style-id voicevox-style-id)
   (output-f0-json (:pointer (:pointer :char))))
-(cffi:defcfun ("voicevox_synthesizer_create_sing_frame_volume" vv-synthesizer-create-sing-frame-volume) voicevox-result-code
+(cffi:defcfun ("voicevox_synthesizer_create_sing_frame_volume" vv-synthesizer-create-sing-frame-volume) :int
   (synthesizer (:pointer (:struct voicevox-synthesizer)))
   (score-json (:pointer :char))
   (frame-audio-query-json (:pointer :char))
   (style-id voicevox-style-id)
   (output-volume-json (:pointer (:pointer :char))))
-(cffi:defcfun ("voicevox_synthesizer_frame_synthesis" vv-synthesizer-frame-synthesis) voicevox-result-code
+(cffi:defcfun ("voicevox_synthesizer_frame_synthesis" vv-synthesizer-frame-synthesis) :int
   (synthesizer (:pointer (:struct voicevox-synthesizer)))
   (frame-audio-query-json (:pointer :char))
   (style-id voicevox-style-id)
@@ -411,34 +384,34 @@
 (cffi:defcfun ("voicevox_wav_free" vv-wav-free) :void
   (wav (:pointer :uint8)))
 (cffi:defcfun ("voicevox_error_result_to_message" vv-error-result-to-message) :string
-  (result-code voicevox-result-code))
+  (result-code :int))
 
 (cffi:defcfun ("voicevox_user_dict_word_make" vv-user-dict-word-make) (:struct voicevox-user-dict-word)
   (surface (:pointer :char))
   (pronunciation (:pointer :char))
   (accent-type :uintptr))
 (cffi:defcfun ("voicevox_user_dict_new" vv-user-dict-new) (:pointer (:struct voicevox-user-dict)))
-(cffi:defcfun ("voicevox_user_dict_load" vv-user-dict-load) voicevox-result-code
+(cffi:defcfun ("voicevox_user_dict_load" vv-user-dict-load) :int
   (user-dict (:pointer (:struct voicevox-user-dict)))
   (dict-path (:pointer :char)))
-(cffi:defcfun ("voicevox_user_dict_add_word" vv-user-dict-add-word) voicevox-result-code
+(cffi:defcfun ("voicevox_user_dict_add_word" vv-user-dict-add-word) :int
   (user-dict (:pointer (:struct voicevox-user-dict)))
   (word (:pointer (:struct voicevox-user-dict-word)))
   (output-word-uuid (:pointer (:array :uint8 16))))
-(cffi:defcfun ("voicevox_user_dict_update_word" vv-user-dict-update-word) voicevox-result-code
+(cffi:defcfun ("voicevox_user_dict_update_word" vv-user-dict-update-word) :int
   (user-dict (:pointer (:struct voicevox-user-dict)))
   (word-uuid (:pointer (:array :uint8 16)))
   (word (:pointer (:struct voicevox-user-dict-word))))
-(cffi:defcfun ("voicevox_user_dict_remove_word" vv-user-dict-remove-word) voicevox-result-code
+(cffi:defcfun ("voicevox_user_dict_remove_word" vv-user-dict-remove-word) :int
   (user-dict (:pointer (:struct voicevox-user-dict)))
   (word-uuid (:pointer (:array :uint8 16))))
-(cffi:defcfun ("voicevox_user_dict_to_json" vv-user-dict-to-json) voicevox-result-code
+(cffi:defcfun ("voicevox_user_dict_to_json" vv-user-dict-to-json) :int
   (user-dict (:pointer (:struct voicevox-user-dict)))
   (output-json (:pointer (:pointer :char))))
-(cffi:defcfun ("voicevox_user_dict_import" vv-user-dict-import) voicevox-result-code
+(cffi:defcfun ("voicevox_user_dict_import" vv-user-dict-import) :int
   (user-dict (:pointer (:struct voicevox-user-dict)))
   (other-dict (:pointer (:struct voicevox-user-dict))))
-(cffi:defcfun ("voicevox_user_dict_save" vv-user-dict-save) voicevox-result-code
+(cffi:defcfun ("voicevox_user_dict_save" vv-user-dict-save) :int
   (user-dict (:pointer (:struct voicevox-user-dict)))
   (path (:pointer :char)))
 (cffi:defcfun ("voicevox_user_dict_delete" vv-user-dict-delete) :void

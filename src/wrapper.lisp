@@ -3,96 +3,56 @@
   (:use :cl)
   (:import-from
    :cl-unofficial-voicevox-core-wrapper.binding
+   
+   ;; import from types.lisp
    :uint8
    :uint16
    :uint32
    :voicevox-result-code-type
    :voicevox-acceleration-mode-type
    :voicevox-user-dict-word-type-type
+   :voicevox-on-existing-voice-model-id-type
+
+   ;; enums
    :voicevox-acceleration-mode
+   :voicevox-on-existing-voice-model-id
    :voicevox-result-code
    :voicevox-user-dict-word-type
+
+   ;; structs
+   :open-jtalk-rc
+   :voicevox-onnxruntime
+   :voicevox-synthesizer
+   :voicevox-user-dict
+   :voicevox-voice-model-file
    :voicevox-load-onnxruntime-options
    :voicevox-initialize-options
    :voicevox-load-voice-model-options
    :voicevox-synthesis-options
    :voicevox-tts-options
    :voicevox-user-dict-word
-   :voicevox-style-id
+
+   ;; typedefs
    :voicevox-voice-model-id
-   :get-result-from-code
-   :error-result-to-message
-   :voicevox-onnxruntime
-   :open-jtalk-rc
-   :voicevox-synthesizer
-   :voicevox-user-dict
-   :voicevox-voice-model-file
-   :get-onnxruntime-lib-recommend-versioned-filename
-   :get-onnxruntime-lib-recommend-unversioned-filename
+   :voicevox-style-id
+
+   ;; ONNX Runtime
+   :vv-get-onnxruntime-lib-recommended-versioned-filename
+   :vv-get-onnxruntime-lib-recommended-unversioned-filename
    :vv-get-onnxruntime-lib-min-required-minor-version
    :vv-get-onnxruntime-lib-max-supported-minor-version
-   :onnxruntime-class
-   :onnxruntime-init
-   :onnxruntime-get
-   :onnxruntime-ptr
-   :open-jtalk-rc-class
-   :open-jtalk-rc-init
-   :open-jtalk-rc-delete
-   :open-jtalk-rc-close
-   :open-jtalk-rc-use-user-dict
-   :open-jtalk-rc-analyze
-   :open-jtalk-rc-ptr
-   :voicevox-class
-   :voicevox-synthesizer-init
-   :voicevox-synthesizer-delete
-   :vv-make-default-load-voice-model-options
-   :voicevox-synthesizer-load-voice-model
-   :voicevox-synthesizer-unload-voice-model
-   :voicevox-synthesizer-is-gpu-mode
-   :voicevox-synthesizer-is-loaded-voice-model
-   :voicevox-synthesizer-create-metas-json
-   :voicevox-synthesizer-create-audio-query
-   :voicevox-synthesizer-create-audio-query-from-kana
-   :voicevox-synthesizer-create-accent-phrases
-   :voicevox-synthesizer-create-accent-phrases-from-kana
-   :voicevox-synthesizer-replace-mora-data
-   :voicevox-synthesizer-replace-phoneme-length
-   :voicevox-synthesizer-replace-mora-pitch
-   :voicevox-synthesizer-synthesis
-   :voicevox-synthesizer-tts
-   :voicevox-synthesizer-tts-from-kana
-   :voicevox-synthesizer-create-sing-frame-audio-query
-   :voicevox-synthesizer-create-sing-frame-f0
-   :voicevox-synthesizer-create-sing-frame-volume
-   :voicevox-synthesizer-frame-synthesis
-   :voice-model-file-class
-   :voice-model-file-open
-   :voice-model-file-id
-   :voice-model-file-create-metas-json
-   :voice-model-file-delete
-   :voice-model-file-close
-   :voice-model-file-ptr
-   :user-dict-class
-   :user-dict-new
-   :user-dict-load
-   :user-dict-add-word
-   :user-dict-update-word
-   :user-dict-remove-word
-   :user-dict-to-json
-   :user-dict-import
-   :user-dict-save
-   :user-dict-delete
-   :user-dict-ptr
-   :vv-get-onnxruntime-lib-versioned-filename
-   :vv-get-onnxruntime-lib-unversioned-filename
    :vv-make-default-load-onnxruntime-options
    :vv-onnxruntime-get
    :vv-onnxruntime-load-once
    :vv-onnxruntime-init-once
+
+   ;; Open JTalk
    :vv-open-jtalk-rc-new
    :vv-open-jtalk-rc-use-user-dict
    :vv-open-jtalk-rc-analyze
    :vv-open-jtalk-rc-delete
+
+   ;; general
    :vv-make-default-initialize-options
    :vv-get-version
    :vv-audio-query-create-from-accent-phrases
@@ -104,12 +64,17 @@
    :vv-frame-audio-query-validate
    :vv-frame-phoneme-validate
    :vv-ensure-compatible
+
+   ;; Voice model file
    :vv-voice-model-file-open
    :vv-voice-model-file-id
    :vv-voice-model-file-create-metas-json
    :vv-voice-model-file-delete
+
+   ;; Synthesizer
    :vv-synthesizer-new
    :vv-synthesizer-delete
+   :vv-make-default-load-voice-model-options
    :vv-synthesizer-load-voice-model
    :vv-synthesizer-unload-voice-model
    :vv-synthesizer-get-onnxruntime
@@ -133,9 +98,13 @@
    :vv-synthesizer-create-sing-frame-f0
    :vv-synthesizer-create-sing-frame-volume
    :vv-synthesizer-frame-synthesis
+
+   ;; memory
    :vv-json-free
    :vv-wav-free
    :vv-error-result-to-message
+
+   ;; User dictionary
    :vv-user-dict-word-make
    :vv-user-dict-new
    :vv-user-dict-load
@@ -145,7 +114,72 @@
    :vv-user-dict-to-json
    :vv-user-dict-import
    :vv-user-dict-save
-   :vv-user-dict-delete))
+   :vv-user-dict-delete)
+  (:export
+   ;; utils
+   :get-result-from-code
+   :error-result-to-message
+   :get-version
+   
+   ;; ONNX Runtime wrapper
+   :onnxruntime-class
+   :onnxruntime-init
+   :onnxruntime-get
+   :onnxruntime-ptr
+
+   ;; Open JTalk wrapper
+   :open-jtalk-rc-class
+   :open-jtalk-rc-init
+   :open-jtalk-rc-delete
+   :open-jtalk-rc-close
+   :open-jtalk-rc-use-user-dict
+   :open-jtalk-rc-analyze
+   :open-jtalk-rc-ptr
+
+   ;; Synthesizer wrapper
+   :voicevox-class
+   :voicevox-synthesizer-init
+   :voicevox-synthesizer-delete
+   :voicevox-synthesizer-load-voice-model
+   :voicevox-synthesizer-unload-voice-model
+   :voicevox-synthesizer-is-gpu-mode
+   :voicevox-synthesizer-is-loaded-voice-model
+   :voicevox-synthesizer-create-metas-json
+   :voicevox-synthesizer-create-audio-query
+   :voicevox-synthesizer-create-audio-query-from-kana
+   :voicevox-synthesizer-create-accent-phrases
+   :voicevox-synthesizer-create-accent-phrases-from-kana
+   :voicevox-synthesizer-replace-mora-data
+   :voicevox-synthesizer-replace-phoneme-length
+   :voicevox-synthesizer-replace-mora-pitch
+   :voicevox-synthesizer-synthesis
+   :voicevox-synthesizer-tts
+   :voicevox-synthesizer-tts-from-kana
+   :voicevox-synthesizer-create-sing-frame-audio-query
+   :voicevox-synthesizer-create-sing-frame-f0
+   :voicevox-synthesizer-create-sing-frame-volume
+   :voicevox-synthesizer-frame-synthesis
+
+   ;; Voice model file wrapper
+   :voice-model-file-class
+   :voice-model-file-open
+   :voice-model-file-id
+   :voice-model-file-create-metas-json
+   :voice-model-file-delete
+   :voice-model-file-close
+
+   ;; User dictionary wrapper
+   :user-dict-class
+   :user-dict-new
+   :user-dict-load
+   :user-dict-add-word
+   :user-dict-update-word
+   :user-dict-remove-word
+   :user-dict-to-json
+   :user-dict-import
+   :user-dict-save
+   :user-dict-delete
+   :user-dict-ptr))
 (in-package :cl-unofficial-voicevox-core-wrapper)
 
 (defvar *loaded-libraries* (make-hash-table :test #'equal))
@@ -221,7 +255,8 @@
 (defmethod open-jtalk-rc-init ((self open-jtalk-rc-class) open-jtalk-dic-dir)
   (declare (type string open-jtalk-dic-dir))
   (cffi:with-foreign-string (c-open-jtalk-dic-dir open-jtalk-dic-dir)
-    (vv-open-jtalk-rc-new c-open-jtalk-dic-dir (open-jtalk-rc-ptr self))))
+    (get-result-from-code
+     (vv-open-jtalk-rc-new c-open-jtalk-dic-dir (open-jtalk-rc-ptr self)))))
 
 (defmethod open-jtalk-rc-delete ((self open-jtalk-rc-class))
   (vv-open-jtalk-rc-delete
@@ -241,10 +276,11 @@
 (defmethod open-jtalk-rc-analyze ((self open-jtalk-rc-class) text)
   (cffi:with-foreign-string (c-text text)
     (cffi:with-foreign-object (output-accent-phrases-json '(:pointer :char))
-      (let ((result (vv-open-jtalk-rc-analyze
-                     (pointer-value (open-jtalk-rc-ptr self) '(:pointer (:struct open-jtalk-rc)))
-                     c-text
-                     output-accent-phrases-json)))
+      (let ((result (get-result-from-code
+                     (vv-open-jtalk-rc-analyze
+                      (pointer-value (open-jtalk-rc-ptr self) '(:pointer (:struct open-jtalk-rc)))
+                      c-text
+                      output-accent-phrases-json))))
         (values result
                 (when (eq result :voicevox-result-ok)
                   (json-pointer-to-string-and-free
@@ -254,7 +290,8 @@
   ((options :accessor options :initform (vv-make-default-initialize-options))
    (synthesizer
     :accessor synthesizer
-    :initform (cffi:foreign-alloc '(:pointer (:struct voicevox-synthesizer))))))
+    :initform (cffi:foreign-alloc '(:pointer (:struct voicevox-synthesizer))))
+   (load-voice-model-options :accessor load-voice-model-options :initform (vv-make-default-load-voice-model-options))))
 
 (defmethod voicevox-synthesizer-init ((self voicevox-class) onnxruntime-instance open-jtalk-instance)
   (get-result-from-code
@@ -271,12 +308,17 @@
 (defun synthesizer-pointer (voicevox)
   (pointer-value (synthesizer voicevox) '(:pointer (:struct voicevox-synthesizer))))
 
-(defmethod voicevox-synthesizer-load-voice-model ((self voicevox-class) voice-model-file)
-  (vv-synthesizer-load-voice-model (synthesizer-pointer self)
-                                   (voice-model-file-pointer voice-model-file)))
+(defmethod voicevox-synthesizer-load-voice-model ((self voicevox-class) voice-model-file &optional load-voice-model-options-arg)
+  (get-result-from-code
+   (vv-synthesizer-load-voice-model (synthesizer-pointer self)
+                                    (voice-model-file-pointer voice-model-file)
+                                    (if load-voice-model-options-arg
+                                        load-voice-model-options-arg
+                                        (load-voice-model-options self)))))
 
 (defmethod voicevox-synthesizer-unload-voice-model ((self voicevox-class) model-id)
-  (vv-synthesizer-unload-voice-model (synthesizer-pointer self) model-id))
+  (get-result-from-code
+   (vv-synthesizer-unload-voice-model (synthesizer-pointer self) model-id)))
 
 (defmethod voicevox-synthesizer-is-gpu-mode ((self voicevox-class))
   (vv-synthesizer-is-gpu-mode (synthesizer-pointer self)))
@@ -295,7 +337,7 @@
                            (second function)
                            function)))
     `(cffi:with-foreign-object (,output-json '(:pointer :char))
-       (let ((,result (,function-name ,@args ,output-json)))
+       (let ((,result (get-result-from-code (,function-name ,@args ,output-json))))
          (values ,result
                  (when (eq ,result :voicevox-result-ok)
                    (json-pointer-to-string-and-free
@@ -428,7 +470,8 @@
 
 (defmethod voice-model-file-open ((self voice-model-file-class) path)
   (cffi:with-foreign-string (c-path path)
-    (vv-voice-model-file-open c-path (voice-model-file-ptr self))))
+    (get-result-from-code
+     (vv-voice-model-file-open c-path (voice-model-file-ptr self)))))
 
 (defun voice-model-file-pointer (voice-model-file)
   (pointer-value (voice-model-file-ptr voice-model-file)
@@ -462,31 +505,37 @@
 
 (defmethod user-dict-load ((self user-dict-class) path)
   (cffi:with-foreign-string (c-path path)
-    (vv-user-dict-load (user-dict-ptr self) c-path)))
+    (get-result-from-code
+     (vv-user-dict-load (user-dict-ptr self) c-path))))
 
 (defmethod user-dict-add-word ((self user-dict-class) word)
   (cffi:with-foreign-object (output-word-uuid '(:array :uint8 16))
-    (let ((result (vv-user-dict-add-word (user-dict-ptr self) word output-word-uuid))
+    (let ((result (get-result-from-code
+                   (vv-user-dict-add-word (user-dict-ptr self) word output-word-uuid)))
           (uuid (make-array 16 :element-type '(unsigned-byte 8))))
       (dotimes (i 16)
         (setf (aref uuid i) (cffi:mem-aref output-word-uuid :uint8 i)))
       (values result uuid))))
 
 (defmethod user-dict-update-word ((self user-dict-class) word-uuid word)
-  (vv-user-dict-update-word (user-dict-ptr self) word-uuid word))
+  (get-result-from-code
+   (vv-user-dict-update-word (user-dict-ptr self) word-uuid word)))
 
 (defmethod user-dict-remove-word ((self user-dict-class) word-uuid)
-  (vv-user-dict-remove-word (user-dict-ptr self) word-uuid))
+  (get-result-from-code
+   (vv-user-dict-remove-word (user-dict-ptr self) word-uuid)))
 
 (defmethod user-dict-to-json ((self user-dict-class))
   (call-json-output-function #'vv-user-dict-to-json (user-dict-ptr self)))
 
 (defmethod user-dict-import ((self user-dict-class) other-dict)
-  (vv-user-dict-import (user-dict-ptr self) (user-dict-ptr other-dict)))
+  (get-result-from-code
+   (vv-user-dict-import (user-dict-ptr self) (user-dict-ptr other-dict))))
 
 (defmethod user-dict-save ((self user-dict-class) path)
   (cffi:with-foreign-string (c-path path)
-    (vv-user-dict-save (user-dict-ptr self) c-path)))
+    (get-result-from-code
+     (vv-user-dict-save (user-dict-ptr self) c-path))))
 
 (defmethod user-dict-delete ((self user-dict-class))
   (vv-user-dict-delete (user-dict-ptr self))
