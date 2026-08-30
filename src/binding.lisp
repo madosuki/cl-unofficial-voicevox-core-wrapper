@@ -33,6 +33,7 @@
    :voicevox-user-dict
    :voicevox-voice-model-file
    :voicevox-load-onnxruntime-options
+   :voicevox-load-onnxruntime-options-filename
    :voicevox-initialize-options
    :voicevox-load-voice-model-options
    :voicevox-synthesis-options
@@ -181,7 +182,7 @@
 (cffi:defcstruct voicevox-voice-model-file)
 
 (cffi:defcstruct voicevox-load-onnxruntime-options
-  (filename (:pointer :char)))
+    (voicevox-load-onnxruntime-options-filename :pointer))
 
 (cffi:defcstruct voicevox-initialize-options
   (acceleration-mode voicevox-acceleration-mode)
