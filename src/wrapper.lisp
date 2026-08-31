@@ -26,6 +26,7 @@
    :voicevox-user-dict
    :voicevox-voice-model-file
    :voicevox-load-onnxruntime-options
+   :voicevox-load-onnxruntime-options-filename
    :voicevox-initialize-options
    :voicevox-load-voice-model-options
    :voicevox-synthesis-options
@@ -120,12 +121,15 @@
    :get-result-from-code
    :error-result-to-message
    :get-version
+   :get-status-on-existing-voice-model-id
    
    ;; ONNX Runtime wrapper
    :onnxruntime-class
    :onnxruntime-init
    :onnxruntime-get
    :onnxruntime-ptr
+   :onnxruntime-set-filename-to-options
+   :onnxruntime-clear
 
    ;; Open JTalk wrapper
    :open-jtalk-rc-class
@@ -201,6 +205,11 @@
 (defun get-version ()
   (vv-get-version))
 
+(defun get-status-on-existing-voice-model-id (code)
+  (etypecase code
+    (keyword code)
+    (integer (cffi:foreign-enum-keyword 'voicevox-on-existing-voice-model-id code))))
+
 (defun get-result-from-code (code)
   (etypecase code
     (keyword code)
@@ -237,12 +246,26 @@
 (defclass onnxruntime-class ()
   ((onnxruntime-ptr
     :accessor onnxruntime-ptr
-    :initform (cffi:foreign-alloc '(:pointer (:struct voicevox-onnxruntime))))))
+    :initform (cffi:foreign-alloc '(:pointer (:struct voicevox-onnxruntime))))
+   (options
+    :accessor options
+    :initform (cffi:foreign-alloc '(:struct voicevox-load-onnxruntime-options)))))
 
-(defmethod onnxruntime-init ((self onnxruntime-class) &optional options)
+(defmethod onnxruntime-set-filename-to-options ((self onnxruntime-class) filename)
+  (setf (cffi:foreign-slot-value (options self)
+                                 '(:struct voicevox-load-onnxruntime-options)
+                                 'voicevox-load-onnxruntime-options-filename)
+        (cffi:foreign-string-alloc filename)))
+
+(defmethod onnxruntime-init ((self onnxruntime-class))
+  (when (cffi:null-pointer-p (options self))
+    (setf (options self) (vv-make-default-load-onnxruntime-options)))
   (get-result-from-code
-   (vv-onnxruntime-load-once (or options (vv-make-default-load-onnxruntime-options))
+   (vv-onnxruntime-load-once (pointer-value (options self) '(:struct voicevox-load-onnxruntime-options))
                              (onnxruntime-ptr self))))
+(defmethod onnxruntime-clear ((self onnxruntime-class))
+  (cffi:foreign-free (onnxruntime-ptr self))
+  (cffi:foreign-free (options self)))
 
 (defun onnxruntime-get ()
   (vv-onnxruntime-get))
@@ -308,13 +331,11 @@
 (defun synthesizer-pointer (voicevox)
   (pointer-value (synthesizer voicevox) '(:pointer (:struct voicevox-synthesizer))))
 
-(defmethod voicevox-synthesizer-load-voice-model ((self voicevox-class) voice-model-file &optional load-voice-model-options-arg)
+(defmethod voicevox-synthesizer-load-voice-model ((self voicevox-class) voice-model-file)
   (get-result-from-code
    (vv-synthesizer-load-voice-model (synthesizer-pointer self)
                                     (voice-model-file-pointer voice-model-file)
-                                    (if load-voice-model-options-arg
-                                        load-voice-model-options-arg
-                                        (load-voice-model-options self)))))
+                                    (load-voice-model-options self))))
 
 (defmethod voicevox-synthesizer-unload-voice-model ((self voicevox-class) model-id)
   (get-result-from-code
