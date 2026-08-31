@@ -120,5 +120,6 @@ exec ros -Q -- $0 "$@"
                   (write-wav-file :filepath output-file
                                   :wav-bytes wav-bytes
                                   :wav-length wav-length)
-                  (format t "wrote: ~A (~A bytes)~%" output-file wav-length))))))))))
+                  (format t "wrote: ~A (~A bytes)~%" output-file wav-length))
+                (cl-unofficial-voicevox-core-wrapper:onnxruntime-clear onnxruntime)))))))))
 ;;; vim: set ft=lisp lisp:
