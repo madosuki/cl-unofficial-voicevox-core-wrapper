@@ -54,15 +54,23 @@ exec ros -Q -- $0 "$@"
          :output-file output-file
          :speaker-id speaker-id))))
 
-(defmacro with-open-libs (lib-core-path lib-onnxruntime-path &body body)
+;; (defmacro with-open-libs (lib-core-path lib-onnxruntime-path &body body)
+;;   `(unwind-protect
+;;         (progn
+;;           (load-library ,lib-core-path)
+;;           (load-library ,lib-onnxruntime-path)
+;;           ,@body)
+;;      (progn
+;;        (close-library ,lib-core-path)
+;;        (close-library ,lib-onnxruntime-path))))
+(defmacro with-open-libs (lib-path &body body)
   `(unwind-protect
         (progn
-          (load-library ,lib-core-path)
-          (load-library ,lib-onnxruntime-path)
+          (load-library ,lib-path)
           ,@body)
      (progn
-       (close-library ,lib-core-path)
-       (close-library ,lib-onnxruntime-path))))
+       (close-library ,lib-path))))
+
 
 (defun require-ok (result context)
   (unless (eq result :voicevox-result-ok)
@@ -92,34 +100,34 @@ exec ros -Q -- $0 "$@"
            (output-file (cadr (member :output-file parsed)))
            (speaker-id (cadr (member :speaker-id parsed))))
       (format t "onnxruntime lib path: ~A~%" lib-onnxruntime-path)
-      (with-open-libs lib-core-path lib-onnxruntime-path
-        (format t "version: ~A~%" (cl-unofficial-voicevox-core-wrapper:get-version))
-        (with-close (open-jtalk (open-jtalk-rc-close open-jtalk))
-          (with-close (voice-model-file (voice-model-file-close voice-model-file))
-            (with-close (voicevox (voicevox-synthesizer-delete voicevox))
-              (let ((onnxruntime (make-instance 'onnxruntime-class))
-                    (open-jtalk-instance (make-instance 'open-jtalk-rc-class))
-                    (voice-model-file-instance (make-instance 'voice-model-file-class))
-                    (voicevox-instance (make-instance 'voicevox-class)))
-                (cl-unofficial-voicevox-core-wrapper:onnxruntime-set-filename-to-options onnxruntime lib-onnxruntime-path)
-                (require-ok (onnxruntime-init onnxruntime) "onnxruntime-init")
-                (require-ok (open-jtalk-rc-init open-jtalk-instance open-jtalk-dict-dir-path)
-                            "open-jtalk-rc-init")
-                (setf open-jtalk open-jtalk-instance)
-                (require-ok (voicevox-synthesizer-init voicevox-instance onnxruntime open-jtalk)
-                            "voicevox-synthesizer-init")
-                (setf voicevox voicevox-instance)
-                (require-ok (voice-model-file-open voice-model-file-instance vvm-path)
-                            "voice-model-file-open")
-                (setf voice-model-file voice-model-file-instance)
-                (require-ok (voicevox-synthesizer-load-voice-model voicevox voice-model-file)
-                            "voicevox-synthesizer-load-voice-model")
-                (multiple-value-bind (result wav-bytes wav-length)
-                    (voicevox-synthesizer-tts voicevox text speaker-id)
-                  (require-ok result "voicevox-synthesizer-tts")
-                  (write-wav-file :filepath output-file
-                                  :wav-bytes wav-bytes
-                                  :wav-length wav-length)
-                  (format t "wrote: ~A (~A bytes)~%" output-file wav-length))
-                (cl-unofficial-voicevox-core-wrapper:onnxruntime-clear onnxruntime)))))))))
+      (with-open-libs lib-core-path
+        (let ((onnxruntime (make-instance 'onnxruntime-class)))
+          (cl-unofficial-voicevox-core-wrapper:onnxruntime-set-filename-to-options onnxruntime lib-onnxruntime-path)
+          (require-ok (onnxruntime-init onnxruntime) "onnxruntime-init")
+          (format t "version: ~A~%" (cl-unofficial-voicevox-core-wrapper:get-version))
+          (with-close (open-jtalk (open-jtalk-rc-close open-jtalk))
+            (with-close (voice-model-file (voice-model-file-close voice-model-file))
+              (with-close (voicevox (voicevox-synthesizer-delete voicevox))
+                (let ((open-jtalk-instance (make-instance 'open-jtalk-rc-class))
+                      (voice-model-file-instance (make-instance 'voice-model-file-class))
+                      (voicevox-instance (make-instance 'voicevox-class)))
+                  (require-ok (open-jtalk-rc-init open-jtalk-instance open-jtalk-dict-dir-path)
+                              "open-jtalk-rc-init")
+                  (setf open-jtalk open-jtalk-instance)
+                  (require-ok (voicevox-synthesizer-init voicevox-instance onnxruntime open-jtalk)
+                              "voicevox-synthesizer-init")
+                  (setf voicevox voicevox-instance)
+                  (require-ok (voice-model-file-open voice-model-file-instance vvm-path)
+                              "voice-model-file-open")
+                  (setf voice-model-file voice-model-file-instance)
+                  (require-ok (voicevox-synthesizer-load-voice-model voicevox voice-model-file)
+                              "voicevox-synthesizer-load-voice-model")
+                  (multiple-value-bind (result wav-bytes wav-length)
+                      (voicevox-synthesizer-tts voicevox text speaker-id)
+                    (require-ok result "voicevox-synthesizer-tts")
+                    (write-wav-file :filepath output-file
+                                    :wav-bytes wav-bytes
+                                    :wav-length wav-length)
+                    (format t "wrote: ~A (~A bytes)~%" output-file wav-length))
+                  (cl-unofficial-voicevox-core-wrapper:onnxruntime-clear onnxruntime))))))))))
 ;;; vim: set ft=lisp lisp:
