@@ -332,7 +332,8 @@
    (synthesizer
     :accessor synthesizer
     :initform (cffi:foreign-alloc '(:pointer (:struct voicevox-synthesizer))))
-   (load-voice-model-options :accessor load-voice-model-options :initform (vv-make-default-load-voice-model-options))))
+   (load-voice-model-options :accessor load-voice-model-options :initform (vv-make-default-load-voice-model-options))
+   (audio-query-frame-length-options :accessor voicevox-audio-query-frame-length-options :initform (vv-make-default-audio-query-frame-length-options))))
 
 (defmethod voicevox-synthesizer-init ((self voicevox-class) onnxruntime-instance open-jtalk-instance)
   (get-result-from-code
