@@ -105,6 +105,24 @@
    :vv-wav-free
    :vv-error-result-to-message
 
+   ;; global variable
+   :+voicevox-empty-bytes+
+
+   ;; for Steaming function
+   :vv-get-frame-rate
+   :vv-audio-query-frame-length
+   :vv-wav-from-s16le
+   :vv-synthesizer-create-audio-feature
+   :vv-audio-feature-len
+   :vv-audio-feature-is-empty
+   :vv-audio-feature-slice
+   :vv-audio-feature-slice-new
+   :vv-audio-feature-slice-len
+   :vv-audio-feature-slice-is-empty
+   :vv-audio-feature-slice-slice
+   :vv-synthesizer-render
+   :vv-audio-feature-delete
+
    ;; User dictionary
    :vv-user-dict-word-make
    :vv-user-dict-new
