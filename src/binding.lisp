@@ -46,7 +46,6 @@
    ;; typedefs
    :voicevox-voice-model-id
    :voicevox-style-id
-   :voicevox-empty-bytes
 
    ;; ONNX Runtime
    :vv-get-onnxruntime-lib-recommended-versioned-filename
@@ -117,6 +116,9 @@
    :vv-json-free ;; deprecated
    :vv-wav-free  ;; deprecated
    :vv-error-result-to-message
+
+   ;; global variable
+   :+voicevox-empty-bytes+
 
    ;; for Steaming function
    :vv-get-frame-rate
@@ -218,7 +220,8 @@
 
 (cffi:defcstruct voicevox-audio-query-frame-length-options
     (enable-interrogative-upspeak :bool))
-(cffi:defcstuct voicevox-audio-feature-slice
+(cffi:defcstruct voicevox-audio-feature-slice
+  (audio-feature (:pointer (:struct voicevox-audio-feature)))
   (start-offset :uintptr)
   (end :uintptr)
   (end-is-inclusive :int ;; correctly types is bool, but cffi bugs not passed bool in struct. therefore instead int. ref: https://github.com/cffi/cffi/issues/265
@@ -229,7 +232,6 @@
 
 (cffi:defctype voicevox-voice-model-id (:pointer (:array :uint8 16)))
 (cffi:defctype voicevox-style-id :uint32)
-(cffi:defctype voicevox-empty-bytes (:pointer (:array :uint8)))
 
 (cffi:defcstruct voicevox-synthesis-options
     (enable-interrogative-upspeak :int ;; correctly types is bool, but cffi bugs not passed bool in struct. therefore instead int. ref: https://github.com/cffi/cffi/issues/265
@@ -464,6 +466,8 @@
 (cffi:defcfun ("voicevox_user_dict_delete" vv-user-dict-delete) :void
   (user-dict (:pointer (:struct voicevox-user-dict))))
 
+(cffi:defcvar ("voicevox_empty_bytes" +voicevox-empty-bytes+ :read-only t) (:pointer :uint8))
+
 (cffi:defcfun ("voicevox_make_default_audio_query_frame_length_options" vv-make-default-audio-query-frame-length-options) (:struct voicevox-audio-query-frame-length-options))
 (cffi:defcfun ("voicevox_get_frame_rate" vv-get-frame-rate) :double)
 (cffi:defcfun ("voicevox_audio_query_frame_length" vv-audio-query-frame-length) :int
@@ -475,7 +479,7 @@
   (pcm (:pointer :uint8))
   (sampling-rate :uint32)
   (is-stereo :bool)
-  (ouput-wav-length (:pointer :uintptr))
+  (output-wav-length (:pointer :uintptr))
   (output-wav (:pointer (:pointer :uint8))))
 
 (cffi:defcfun ("voicevox_synthesizer_create_audio_feature" vv-synthesizer-create-audio-feature) :int
@@ -495,12 +499,13 @@
   (audio-feature (:pointer (:struct voicevox-audio-feature)))
   (start-inclusive :uintptr)
   (end :uintptr)
+  (end-is-include :bool)
   (clamp :bool)
   (allow-start-exceeds-end :bool)
   (output (:pointer (:struct voicevox-audio-feature-slice))))
 
 (cffi:defcfun ("voicevox_audio_feature_slice_new" vv-audio-feature-slice-new) (:struct voicevox-audio-feature-slice)
-  (audio-feature (:pointer (:struct vocievox-audio-feature)))
+  (audio-feature (:pointer (:struct voicevox-audio-feature)))
   (clamp :bool)
   (allow-start-exceeds-end :bool))
 
@@ -509,7 +514,7 @@
   (output (:pointer :uintptr)))
 
 (cffi:defcfun ("voicevox_audio_feature_slice_is_empty" vv-audio-feature-slice-is-empty) :int
-  (audio-feature-slice (:struct voicevox-aduio-feature-slice))
+  (audio-feature-slice (:struct voicevox-audio-feature-slice))
   (output (:pointer :bool)))
 
 (cffi:defcfun ("voicevox_audio_feature_slice_slice" vv-audio-feature-slice-slice) :int
