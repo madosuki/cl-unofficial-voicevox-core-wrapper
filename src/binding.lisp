@@ -37,12 +37,16 @@
    :voicevox-initialize-options
    :voicevox-load-voice-model-options
    :voicevox-synthesis-options
+   :voicevox-audio-query-frame-length-options
+   :vv-make-default-audio-query-frame-length-options
+   :voicevox-audio-feature-slice
    :voicevox-tts-options
    :voicevox-user-dict-word
 
    ;; typedefs
    :voicevox-voice-model-id
    :voicevox-style-id
+   :voicevox-empty-bytes
 
    ;; ONNX Runtime
    :vv-get-onnxruntime-lib-recommended-versioned-filename
@@ -108,9 +112,26 @@
    :vv-synthesizer-frame-synthesis
 
    ;; memory
-   :vv-json-free
-   :vv-wav-free
+   :vv-string-free
+   :vv-bytes-free
+   :vv-json-free ;; deprecated
+   :vv-wav-free  ;; deprecated
    :vv-error-result-to-message
+
+   ;; for Steaming function
+   :vv-get-frame-rate
+   :vv-audio-query-frame-length
+   :vv-wav-from-s16le
+   :vv-synthesizer-create-audio-feature
+   :vv-audio-feature-len
+   :vv-audio-feature-is-empty
+   :vv-audio-feature-slice
+   :vv-audio-feature-slice-new
+   :vv-audio-feature-slice-len
+   :vv-audio-feature-slice-is-empty
+   :vv-audio-feature-slice-slice
+   :vv-synthesizer-render
+   :vv-audio-feature-delete
 
    ;; User dictionary
    :vv-user-dict-word-make
@@ -166,7 +187,10 @@
   (:voicevox-result-invalid-note-error 32)
   (:voicevox-result-invalid-frame-audio-query-error 33)
   (:voicevox-result-invalid-frame-phoneme-error 34)
-  (:voicevox-result-incompatible-queries-error 35))
+  (:voicevox-result-incompatible-queries-error 35)
+  (:voicevox-result-start-out-of-bounds-error 36)
+  (:voicevox-result-end-out-of-bounds-error 37)
+  (:voicevox-result-start-exceeds-end-error 38))
 
 (cffi:defcenum voicevox-user-dict-word-type
   (:voicevox-user-dict-word-type-proper-noun 0)
@@ -180,25 +204,40 @@
 (cffi:defcstruct voicevox-synthesizer)
 (cffi:defcstruct voicevox-user-dict)
 (cffi:defcstruct voicevox-voice-model-file)
+(cffi:defcstruct voicevox-audio-feature)
 
 (cffi:defcstruct voicevox-load-onnxruntime-options
     (voicevox-load-onnxruntime-options-filename :pointer))
 
 (cffi:defcstruct voicevox-initialize-options
-  (acceleration-mode voicevox-acceleration-mode)
+    (acceleration-mode voicevox-acceleration-mode)
   (cpu-num-threads :uint16))
 
 (cffi:defcstruct voicevox-load-voice-model-options
-  (on-existing voicevox-on-existing-voice-model-id))
+    (on-existing voicevox-on-existing-voice-model-id))
+
+(cffi:defcstruct voicevox-audio-query-frame-length-options
+    (enable-interrogative-upspeak :bool))
+(cffi:defcstuct voicevox-audio-feature-slice
+  (start-offset :uintptr)
+  (end :uintptr)
+  (end-is-inclusive :int ;; correctly types is bool, but cffi bugs not passed bool in struct. therefore instead int. ref: https://github.com/cffi/cffi/issues/265
+                    )
+  (clamp :int ;; correctly types is bool, but cffi bugs not passed bool in struct. therefore instead int. ref: https://github.com/cffi/cffi/issues/265
+         )
+  (allow-start-exceeds-end :int))
 
 (cffi:defctype voicevox-voice-model-id (:pointer (:array :uint8 16)))
 (cffi:defctype voicevox-style-id :uint32)
+(cffi:defctype voicevox-empty-bytes (:pointer (:array :uint8)))
 
 (cffi:defcstruct voicevox-synthesis-options
-  (enable-interrogative-upspeak :bool))
+    (enable-interrogative-upspeak :int ;; correctly types is bool, but cffi bugs not passed bool in struct. therefore instead int. ref: https://github.com/cffi/cffi/issues/265
+                                  ))
 
 (cffi:defcstruct voicevox-tts-options
-  (enable-interrogative-upspeak :bool))
+  (enable-interrogative-upspeak :int ;; correctly types is bool, but cffi bugs not passed bool in struct. therefore instead int. ref: https://github.com/cffi/cffi/issues/265
+                                ))
 
 (cffi:defcstruct voicevox-user-dict-word
   (surface (:pointer :char))
@@ -206,6 +245,7 @@
   (accent-type :uintptr)
   (word-type voicevox-user-dict-word-type)
   (priority :uint8))
+
 
 (cffi:defcfun ("voicevox_get_onnxruntime_lib_recommended_versioned_filename" vv-get-onnxruntime-lib-recommended-versioned-filename) :string)
 (cffi:defcfun ("voicevox_get_onnxruntime_lib_recommended_unversioned_filename" vv-get-onnxruntime-lib-recommended-unversioned-filename) :string)
@@ -380,8 +420,14 @@
   (output-wav-length (:pointer :uintptr))
   (output-wav (:pointer (:pointer :uint8))))
 
+(cffi:defcfun ("voicevox_string_free" vv-string-free) :void
+  (string (:pointer :char)))
+(cffi:defcfun ("voicevox_bytes_free" vv-bytes-free) :void
+  (bytes (:pointer :uint8)))
+;; voicevox_json_free is deprecated since 0.17.1
 (cffi:defcfun ("voicevox_json_free" vv-json-free) :void
   (json (:pointer :char)))
+;; voicevox_wav_free is depreacated since 0.17.1
 (cffi:defcfun ("voicevox_wav_free" vv-wav-free) :void
   (wav (:pointer :uint8)))
 (cffi:defcfun ("voicevox_error_result_to_message" vv-error-result-to-message) :string
@@ -418,3 +464,68 @@
 (cffi:defcfun ("voicevox_user_dict_delete" vv-user-dict-delete) :void
   (user-dict (:pointer (:struct voicevox-user-dict))))
 
+(cffi:defcfun ("voicevox_make_default_audio_query_frame_length_options" vv-make-default-audio-query-frame-length-options) (:struct voicevox-audio-query-frame-length-options))
+(cffi:defcfun ("voicevox_get_frame_rate" vv-get-frame-rate) :double)
+(cffi:defcfun ("voicevox_audio_query_frame_length" vv-audio-query-frame-length) :int
+  (audio-query-json (:pointer :char))
+  (options (:struct voicevox-audio-query-frame-length-options))
+  (output-frame-length (:pointer :uintptr)))
+(cffi:defcfun ("voicevox_wav_from_s16le" vv-wav-from-s16le) :void
+  (pcm-length :uintptr)
+  (pcm (:pointer :uint8))
+  (sampling-rate :uint32)
+  (is-stereo :bool)
+  (ouput-wav-length (:pointer :uintptr))
+  (output-wav (:pointer (:pointer :uint8))))
+
+(cffi:defcfun ("voicevox_synthesizer_create_audio_feature" vv-synthesizer-create-audio-feature) :int
+  (synthesizer (:pointer (:struct voicevox-synthesizer)))
+  (audio-query-json (:pointer :char))
+  (style-id voicevox-style-id)
+  (options (:struct voicevox-synthesis-options))
+  (out-audio-features (:pointer (:pointer (:struct voicevox-audio-feature)))))
+
+(cffi:defcfun ("voicevox_audio_feature_len" vv-audio-feature-len) :uintptr
+  (audio-feature (:pointer (:struct voicevox-audio-feature))))
+
+(cffi:defcfun ("voicevox_audio_feature_is_empty" vv-audio-feature-is-empty) :bool
+  (audio-feature (:pointer (:struct voicevox-audio-feature))))
+
+(cffi:defcfun ("voicevox_audio_feature_slice" vv-audio-feature-slice) :int
+  (audio-feature (:pointer (:struct voicevox-audio-feature)))
+  (start-inclusive :uintptr)
+  (end :uintptr)
+  (clamp :bool)
+  (allow-start-exceeds-end :bool)
+  (output (:pointer (:struct voicevox-audio-feature-slice))))
+
+(cffi:defcfun ("voicevox_audio_feature_slice_new" vv-audio-feature-slice-new) (:struct voicevox-audio-feature-slice)
+  (audio-feature (:pointer (:struct vocievox-audio-feature)))
+  (clamp :bool)
+  (allow-start-exceeds-end :bool))
+
+(cffi:defcfun ("voicevox_audio_feature_slice_len" vv-audio-feature-slice-len) :int
+  (audio-feature-slice (:struct voicevox-audio-feature-slice))
+  (output (:pointer :uintptr)))
+
+(cffi:defcfun ("voicevox_audio_feature_slice_is_empty" vv-audio-feature-slice-is-empty) :int
+  (audio-feature-slice (:struct voicevox-aduio-feature-slice))
+  (output (:pointer :bool)))
+
+(cffi:defcfun ("voicevox_audio_feature_slice_slice" vv-audio-feature-slice-slice) :int
+  (audio-feature-slice (:struct voicevox-audio-feature-slice))
+  (start-inclusive :uintptr)
+  (end :uintptr)
+  (end-is-inclusive :bool)
+  (clamp :bool)
+  (allow-start-exceeds-end :bool)
+  (output (:pointer (:struct voicevox-audio-feature-slice))))
+
+(cffi:defcfun ("voicevox_synthesizer_render" vv-synthesizer-render) :int
+  (synthesizer (:pointer (:struct voicevox-synthesizer)))
+  (audio-feature-slice (:struct voicevox-audio-feature-slice))
+  (output-pcm-length (:pointer :uintptr))
+  (output-pcm (:pointer (:pointer :uint8))))
+
+(cffi:defcfun ("voicevox_audio_feature_delete" vv-audio-feature-delete) :void
+  (audio-feature (:pointer (:struct voicevox-audio-feature))))

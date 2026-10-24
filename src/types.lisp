@@ -57,7 +57,10 @@
     :voicevox-result-invalid-note-error
     :voicevox-result-invalid-frame-audio-query-error
     :voicevox-result-invalid-frame-phoneme-error
-    :voicevox-result-incompatible-queries-error))
+    :voicevox-result-incompatible-queries-error
+    :voicevox-result-start-out-of-bounds-error
+    :voicevox-result-end-out-of-bounds-error
+    :voicevox-result-start-exceeds-end-error))
 
 (deftype voicevox-user-dict-word-type-type ()
   '(member
