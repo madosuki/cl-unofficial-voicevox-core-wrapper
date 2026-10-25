@@ -101,8 +101,8 @@
    :vv-synthesizer-frame-synthesis
 
    ;; memory
-   :vv-json-free
-   :vv-wav-free
+   :vv-string-free
+   :vv-bytes-free
    :vv-error-result-to-message
 
    ;; global variable
@@ -248,7 +248,7 @@
 (defun json-pointer-to-string-and-free (pointer)
   (unwind-protect
        (cffi:foreign-string-to-lisp pointer)
-    (vv-json-free pointer)))
+    (vv-string-free pointer)))
 
 (defun copy-wav-pointer (pointer length)
   (let ((result (make-array length :element-type '(unsigned-byte 8))))
@@ -334,6 +334,7 @@
     :initform (cffi:foreign-alloc '(:pointer (:struct voicevox-synthesizer))))
    (load-voice-model-options :accessor load-voice-model-options :initform (vv-make-default-load-voice-model-options))
    (audio-query-frame-length-options :accessor voicevox-audio-query-frame-length-options :initform (vv-make-default-audio-query-frame-length-options))))
+
 
 (defmethod voicevox-synthesizer-init ((self voicevox-class) onnxruntime-instance open-jtalk-instance)
   (get-result-from-code
@@ -442,7 +443,7 @@
                    (wav-pointer (cffi:mem-ref output-wav '(:pointer :uint8)))
                    (wav-bytes (unwind-protect
                                   (copy-wav-pointer wav-pointer wav-length)
-                                (vv-wav-free wav-pointer))))
+                                (vv-bytes-free wav-pointer))))
               (values result wav-bytes wav-length))
             (values result nil 0))))))
 
