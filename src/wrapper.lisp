@@ -333,7 +333,8 @@
     :accessor synthesizer
     :initform (cffi:foreign-alloc '(:pointer (:struct voicevox-synthesizer))))
    (load-voice-model-options :accessor load-voice-model-options :initform (vv-make-default-load-voice-model-options))
-   (audio-query-frame-length-options :accessor voicevox-audio-query-frame-length-options :initform (vv-make-default-audio-query-frame-length-options))))
+   (audio-query-frame-length-options :accessor voicevox-audio-query-frame-length-options :initform (vv-make-default-audio-query-frame-length-options))
+   (audio-feature-ptr :accessor audio-feature-ptr :initform (cffi:foreign-alloc '(:pointer (:struct voicevox-audio-feature))))))
 
 
 (defmethod voicevox-synthesizer-init ((self voicevox-class) onnxruntime-instance open-jtalk-instance)
@@ -503,6 +504,25 @@
                               (synthesizer-pointer self)
                               c-json
                               style-id)))
+
+(defmethod voicevox-synthesizer-create-audio-feature ((self voicevox-class) audio-query-json style-id)
+  (cffi:with-foreign-string (c-json audio-query-json)
+    (cffi:with-foreign-object (audio-feature-ptr-ptr :pointer)
+      (setf (cffi:mem-ref audio-feature-ptr-ptr) (cffi:foreign-alloc '(:struct voicevox-audio-feature)))
+      (unwind-protect
+           (let ((result-code 
+                  (vv-synthesizer-create-audio-feature
+                   (synthesizer-pointer self)
+                   c-json
+                   style-id
+                   (audio-query-frame-length-options self)
+                   (audio-feature-ptr-ptr))))
+             (let ((old-audio-feature-ptr (audio-feature-ptr self)))
+               (setf (audio-feature-ptr self)
+                     (cffi:memref audio-feature-ptr-ptr '(:pointer (:struct voicevox-audio-feature))))
+               (cffi:foreign-free old-audio-feature-ptr))
+             (get-result-from-code result-code))
+        (cffi:foreign-free audio-feature-ptr-ptr)))))
 
 (defclass voice-model-file-class ()
   ((voice-model-file-ptr
