@@ -261,6 +261,33 @@
       (setf (aref result i)
             (cffi:mem-aref (cffi:mem-aref target pointer-type) value-type i)))))
 
+(defun call-wav-output-function (function &rest args)
+  (cffi:with-foreign-object (output-wav-length :uintptr)
+    (cffi:with-foreign-object (output-wav '(:pointer :uint8))
+      (let ((result (apply function (append args (list output-wav-length output-wav)))))
+        (setf result (get-result-from-code result))
+        (if (eq result :voicevox-result-ok)
+            (let* ((wav-length (cffi:mem-ref output-wav-length :uintptr))
+                   (wav-pointer (cffi:mem-ref output-wav '(:pointer :uint8)))
+                   (wav-bytes (unwind-protect
+                                  (copy-wav-pointer wav-pointer wav-length)
+                                (vv-bytes-free wav-pointer))))
+              (values result wav-bytes wav-length))
+            (values result nil 0))))))
+
+(defmacro call-json-output-function (function &rest args)
+  (let ((output-json (gensym "OUTPUT-JSON-"))
+        (result (gensym "RESULT-"))
+        (function-name (if (and (consp function) (eq (first function) 'function))
+                           (second function)
+                           function)))
+    `(cffi:with-foreign-object (,output-json '(:pointer :char))
+       (let ((,result (get-result-from-code (,function-name ,@args ,output-json))))
+         (values ,result
+                 (when (eq ,result :voicevox-result-ok)
+                   (json-pointer-to-string-and-free
+                    (cffi:mem-ref ,output-json '(:pointer :char)))))))))
+
 (defclass onnxruntime-class ()
   ((onnxruntime-ptr
     :accessor onnxruntime-ptr
@@ -333,8 +360,7 @@
     :accessor synthesizer
     :initform (cffi:foreign-alloc '(:pointer (:struct voicevox-synthesizer))))
    (load-voice-model-options :accessor load-voice-model-options :initform (vv-make-default-load-voice-model-options))
-   (audio-query-frame-length-options :accessor voicevox-audio-query-frame-length-options :initform (vv-make-default-audio-query-frame-length-options))
-   (audio-feature-ptr :accessor audio-feature-ptr :initform (cffi:foreign-alloc '(:pointer (:struct voicevox-audio-feature))))))
+   (audio-query-frame-length-options :accessor voicevox-audio-query-frame-length-options :initform (vv-make-default-audio-query-frame-length-options))))
 
 
 (defmethod voicevox-synthesizer-init ((self voicevox-class) onnxruntime-instance open-jtalk-instance)
@@ -371,19 +397,6 @@
 (defmethod voicevox-synthesizer-create-metas-json ((self voicevox-class))
   (json-pointer-to-string-and-free
    (vv-synthesizer-create-metas-json (synthesizer-pointer self))))
-
-(defmacro call-json-output-function (function &rest args)
-  (let ((output-json (gensym "OUTPUT-JSON-"))
-        (result (gensym "RESULT-"))
-        (function-name (if (and (consp function) (eq (first function) 'function))
-                           (second function)
-                           function)))
-    `(cffi:with-foreign-object (,output-json '(:pointer :char))
-       (let ((,result (get-result-from-code (,function-name ,@args ,output-json))))
-         (values ,result
-                 (when (eq ,result :voicevox-result-ok)
-                   (json-pointer-to-string-and-free
-                    (cffi:mem-ref ,output-json '(:pointer :char)))))))))
 
 (defmethod voicevox-synthesizer-create-audio-query ((self voicevox-class) text style-id)
   (cffi:with-foreign-string (c-text text)
@@ -434,19 +447,6 @@
                                c-json
                                style-id)))
 
-(defun call-wav-output-function (function &rest args)
-  (cffi:with-foreign-object (output-wav-length :uintptr)
-    (cffi:with-foreign-object (output-wav '(:pointer :uint8))
-      (let ((result (apply function (append args (list output-wav-length output-wav)))))
-        (setf result (get-result-from-code result))
-        (if (eq result :voicevox-result-ok)
-            (let* ((wav-length (cffi:mem-ref output-wav-length :uintptr))
-                   (wav-pointer (cffi:mem-ref output-wav '(:pointer :uint8)))
-                   (wav-bytes (unwind-protect
-                                  (copy-wav-pointer wav-pointer wav-length)
-                                (vv-bytes-free wav-pointer))))
-              (values result wav-bytes wav-length))
-            (values result nil 0))))))
 
 (defmethod voicevox-synthesizer-synthesis ((self voicevox-class) audio-query-json style-id
                                            &optional options)
@@ -505,24 +505,27 @@
                               c-json
                               style-id)))
 
-(defmethod voicevox-synthesizer-create-audio-feature ((self voicevox-class) audio-query-json style-id)
+(defmethod voicevox-synthesizer-create-audio-feature ((self voicevox-class) audio-query-json style-id audio-feature-ptr-ptr)
   (cffi:with-foreign-string (c-json audio-query-json)
-    (cffi:with-foreign-object (audio-feature-ptr-ptr :pointer)
-      (setf (cffi:mem-ref audio-feature-ptr-ptr) (cffi:foreign-alloc '(:struct voicevox-audio-feature)))
-      (unwind-protect
-           (let ((result-code 
-                  (vv-synthesizer-create-audio-feature
-                   (synthesizer-pointer self)
-                   c-json
-                   style-id
-                   (audio-query-frame-length-options self)
-                   (audio-feature-ptr-ptr))))
-             (let ((old-audio-feature-ptr (audio-feature-ptr self)))
-               (setf (audio-feature-ptr self)
-                     (cffi:memref audio-feature-ptr-ptr '(:pointer (:struct voicevox-audio-feature))))
-               (cffi:foreign-free old-audio-feature-ptr))
-             (get-result-from-code result-code))
-        (cffi:foreign-free audio-feature-ptr-ptr)))))
+    (setf (cffi:mem-ref audio-feature-ptr-ptr) (cffi:foreign-alloc '(:struct voicevox-audio-feature)))
+    (let ((result-code 
+            (vv-synthesizer-create-audio-feature
+             (synthesizer-pointer self)
+             c-json
+             style-id
+             (audio-query-frame-length-options self)
+             (audio-feature-ptr-ptr))))
+      (get-result-from-code result-code))))
+
+(defmethod voicevox-synthesizer-streaming-synthesis ((self voicevox-class) audio-query-json style-id)
+  (cffi:with-foreign-object (audio-feature-ptr-ptr :pointer)
+    (unwind-protect
+         (when (equal (voicevox-synthesizer-create-audio-feature audio-query-json style-id audio-feature-ptr-ptr)
+                      :voicevox-ok)
+           (let ((feature-ptr (cffi:mem-ref audio-feature-ptr-ptr))
+                 (frame-rate (vv-get-frame-rate)))
+             ))
+      (cffi:foreign-free audio-feature-ptr-ptr))))
 
 (defclass voice-model-file-class ()
   ((voice-model-file-ptr
