@@ -528,7 +528,6 @@
                     (frame-rate (vv-get-frame-rate))
                     (start 0)
                     (width (vv-audio-feature-len feature-ptr)))
-               (when)
                (let ((segment-length-seonds (round (* 0.3 frame-rate))))
                  (cffi:with-foreign-object (slice-ptr :pointer)
                    (unwind-protect
