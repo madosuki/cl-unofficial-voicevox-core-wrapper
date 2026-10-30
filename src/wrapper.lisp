@@ -552,7 +552,7 @@
                               (progn
                                 (cffi:foreign-free output-pcm)
                                 (cffi:foreign-free output-pcm-length)))))
-                     (cffi:foreing-free slice-ptr))))))
+                     (cffi:foreign-free slice-ptr))))))
         (progn
           (cffi:foreign-free c-string)
           (cffi:foreign-free audio-feature-ptr-ptr))))))
