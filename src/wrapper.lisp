@@ -518,16 +518,44 @@
       (get-result-from-code result-code))))
 
 (defmethod voicevox-synthesizer-streaming-synthesis ((self voicevox-class) audio-query-json style-id)
-  (cffi:with-foreign-object (audio-feature-ptr-ptr :pointer)
-    (unwind-protect
-         (when (equal (voicevox-synthesizer-create-audio-feature
-                       audio-query-json style-id (vv-make-default-audio-query-frame-length-options) audio-feature-ptr-ptr)
-                      :voicevox-result-ok)
-           (let ((feature-ptr (cffi:mem-ref audio-feature-ptr-ptr))
-                 (frame-rate (vv-get-frame-rate)))
-             (let ((segment-length-seonds (round (* 0.3 frame-rate))))
-               )))
-      (cffi:foreign-free audio-feature-ptr-ptr))))
+  (cffi:with-foreign-string (c-json audio-query-json)
+    (cffi:with-foreign-object (audio-feature-ptr-ptr :pointer)
+      (unwind-protect
+           (when (equal (voicevox-synthesizer-create-audio-feature
+                         c-json style-id (vv-make-default-audio-query-frame-length-options) audio-feature-ptr-ptr)
+                        :voicevox-result-ok)
+             (let* ((feature-ptr (cffi:mem-ref audio-feature-ptr-ptr))
+                    (frame-rate (vv-get-frame-rate))
+                    (start 0)
+                    (width (vv-audio-feature-len feature-ptr)))
+               (when)
+               (let ((segment-length-seonds (round (* 0.3 frame-rate))))
+                 (cffi:with-foreign-object (slice-ptr :pointer)
+                   (unwind-protect
+                        (let ((slice-result (result-from-code
+                                             (vv-audio-feature-slice
+                                              feature-ptr
+                                              start
+                                              segment-length-scond
+                                              0 ;; false
+                                              0 ;; false
+                                              slice-ptr))))
+                          (cffi:with-foreign-objects ((output-pcm :pointer) (output-pcm-length :pointer))
+                            (unwind-protect
+                                 (let ((pcm-result (result-from-code
+                                                    (vv-synthesizer-render
+                                                     (synthesizer-ptr self)
+                                                     (cffi:mem-ref slice-ptr '(:struct voicevox-audio-feature-slice))
+                                                     output-pcm-length
+                                                     output-pcm))))
+                                   )
+                              (progn
+                                (cffi:foreign-free output-pcm)
+                                (cffi:foreign-free output-pcm-length)))))
+                     (cffi:foreing-free slice-ptr))))))
+        (progn
+          (cffi:foreign-free c-string)
+          (cffi:foreign-free audio-feature-ptr-ptr))))))
 
 (defclass voice-model-file-class ()
   ((voice-model-file-ptr

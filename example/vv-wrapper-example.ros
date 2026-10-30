@@ -122,12 +122,13 @@ exec ros -Q -- $0 "$@"
                   (setf voice-model-file voice-model-file-instance)
                   (require-ok (voicevox-synthesizer-load-voice-model voicevox voice-model-file)
                               "voicevox-synthesizer-load-voice-model")
-                  (multiple-value-bind (result wav-bytes wav-length)
-                      (voicevox-synthesizer-tts voicevox text speaker-id)
-                    (require-ok result "voicevox-synthesizer-tts")
-                    (write-wav-file :filepath output-file
-                                    :wav-bytes wav-bytes
-                                    :wav-length wav-length)
-                    (format t "wrote: ~A (~A bytes)~%" output-file wav-length))
+                  (voicevox-synthesizer-streaming-synthesis voicevox text speaker-id)
+                  ;; (multiple-value-bind (result wav-bytes wav-length)
+                  ;;     (voicevox-synthesizer-tts voicevox text speaker-id)
+                  ;;   (require-ok result "voicevox-synthesizer-tts")
+                  ;;   (write-wav-file :filepath output-file
+                  ;;                   :wav-bytes wav-bytes
+                  ;;                   :wav-length wav-length)
+                  ;;   (format t "wrote: ~A (~A bytes)~%" output-file wav-length))
                   (cl-unofficial-voicevox-core-wrapper:onnxruntime-clear onnxruntime))))))))))
 ;;; vim: set ft=lisp lisp:
