@@ -522,7 +522,7 @@
     (unwind-protect
          (when (equal (voicevox-synthesizer-create-audio-feature
                        audio-query-json style-id (vv-make-default-audio-query-frame-length-options) audio-feature-ptr-ptr)
-                      :voicevox-ok)
+                      :voicevox-result-ok)
            (let ((feature-ptr (cffi:mem-ref audio-feature-ptr-ptr))
                  (frame-rate (vv-get-frame-rate)))
              (let ((segment-length-seonds (round (* 0.3 frame-rate))))
