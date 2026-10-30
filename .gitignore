@@ -24,3 +24,5 @@
 .agents/
 
 *.wav
+
+.direnv
