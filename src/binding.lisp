@@ -85,7 +85,7 @@
    ;; Synthesizer
    :vv-synthesizer-new
    :vv-synthesizer-delete
-   :vv-make-default-load-voice-model-options
+   :vv-make-default-audio-query-frame-length-options
    :vv-synthesizer-load-voice-model
    :vv-synthesizer-unload-voice-model
    :vv-synthesizer-get-onnxruntime
