@@ -219,14 +219,15 @@
     (on-existing voicevox-on-existing-voice-model-id))
 
 (cffi:defcstruct voicevox-audio-query-frame-length-options
-    (enable-interrogative-upspeak :bool))
+    (enable-interrogative-upspeak :uint8) ;; this field real type real defined is bool, but cffi not recognize correct type, therfore instead uint8.
+  )
 (cffi:defcstruct voicevox-audio-feature-slice
   (audio-feature (:pointer (:struct voicevox-audio-feature)))
   (start-offset :uintptr)
   (end :uintptr)
-  (end-is-inclusive :int ;; correctly types is bool, but cffi bugs not passed bool in struct. therefore instead int. ref: https://github.com/cffi/cffi/issues/265
+  (end-is-inclusive :uint8 ;; correctly types is bool, but cffi bugs not passed bool in struct. therefore instead uint8. ref: https://github.com/cffi/cffi/issues/265
                     )
-  (clamp :int ;; correctly types is bool, but cffi bugs not passed bool in struct. therefore instead int. ref: https://github.com/cffi/cffi/issues/265
+  (clamp :uint8 ;; correctly types is bool, but cffi bugs not passed bool in struct. therefore instead uint8. ref: https://github.com/cffi/cffi/issues/265
          )
   (allow-start-exceeds-end :int))
 
@@ -234,11 +235,11 @@
 (cffi:defctype voicevox-style-id :uint32)
 
 (cffi:defcstruct voicevox-synthesis-options
-    (enable-interrogative-upspeak :int ;; correctly types is bool, but cffi bugs not passed bool in struct. therefore instead int. ref: https://github.com/cffi/cffi/issues/265
+    (enable-interrogative-upspeak :uint8 ;; correctly types is bool, but cffi bugs not passed bool in struct. therefore instead uint8. ref: https://github.com/cffi/cffi/issues/265
                                   ))
 
 (cffi:defcstruct voicevox-tts-options
-  (enable-interrogative-upspeak :int ;; correctly types is bool, but cffi bugs not passed bool in struct. therefore instead int. ref: https://github.com/cffi/cffi/issues/265
+  (enable-interrogative-upspeak :uint8 ;; correctly types is bool, but cffi bugs not passed bool in struct. therefore instead uint8. ref: https://github.com/cffi/cffi/issues/265
                                 ))
 
 (cffi:defcstruct voicevox-user-dict-word

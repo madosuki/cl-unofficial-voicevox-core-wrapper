@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
+export RUST_BACKTRACE=full
 # export LD_LIBRARY_PATH="$HOME/voicevox_core/0.17.0/download/voicevox_core/onnxruntime/lib:$LD_LIBRARY_PATH"
 ./example/vv-wrapper-example.ros --text "Test" \
 --lib-core-path /home/user/voicevox/core_data/0.17.1/voicevox_core/c_api/lib/libvoicevox_core.so \

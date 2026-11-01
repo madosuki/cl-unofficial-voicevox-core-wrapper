@@ -5,7 +5,7 @@ exec ros -Q -- $0 "$@"
 |#
 (progn ;;init forms
   (ros:ensure-asdf)
-  #+quicklisp(ql:quickload '(:jonathan :cl-unofficial-voicevox-core-wrapper) :silent t)
+  #+quicklisp(ql:quickload '(:jonathan :cl-unofficial-voicevox-core-wrapper :cffi) :silent t)
   )
 
 (defpackage :ros.script.vv-wrapper-example.3899604745
@@ -122,7 +122,11 @@ exec ros -Q -- $0 "$@"
                   (setf voice-model-file voice-model-file-instance)
                   (require-ok (voicevox-synthesizer-load-voice-model voicevox voice-model-file)
                               "voicevox-synthesizer-load-voice-model")
-                  (voicevox-synthesizer-streaming-synthesis voicevox text speaker-id)
+                  (multiple-value-bind (result audio-query-json)
+                      (voicevox-synthesizer-create-audio-query voicevox text speaker-id)
+                    (require-ok result "voicevox-synthesizer-create-qudio-query")
+                    (voicevox-synthesizer-streaming-synthesis voicevox audio-query-json speaker-id)
+                    )
                   ;; (multiple-value-bind (result wav-bytes wav-length)
                   ;;     (voicevox-synthesizer-tts voicevox text speaker-id)
                   ;;   (require-ok result "voicevox-synthesizer-tts")
