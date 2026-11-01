@@ -267,18 +267,18 @@
       (setf (aref result i)
             (cffi:mem-aref (cffi:mem-aref target pointer-type) value-type i)))))
 
-(defun call-wav-output-function (function &rest args)
-  (cffi:with-foreign-object (output-wav-length :uintptr)
-    (cffi:with-foreign-object (output-wav '(:pointer :uint8))
-      (let ((result (apply function (append args (list output-wav-length output-wav)))))
+(defun call-bytes-output-function (function &rest args)
+  (cffi:with-foreign-object (output-bytes-length :uintptr)
+    (cffi:with-foreign-object (output-bytes '(:pointer :uint8))
+      (let ((result (apply function (append args (list output-bytes-length output-wav)))))
         (setf result (get-result-from-code result))
         (if (eq result :voicevox-result-ok)
-            (let* ((wav-length (cffi:mem-ref output-wav-length :uintptr))
-                   (wav-pointer (cffi:mem-ref output-wav '(:pointer :uint8)))
-                   (wav-bytes (unwind-protect
-                                  (copy-wav-pointer wav-pointer wav-length)
-                                (vv-bytes-free wav-pointer))))
-              (values result wav-bytes wav-length))
+            (let* ((bytes-length (cffi:mem-ref output-bytes-length :uintptr))
+                   (bytes-pointer (cffi:mem-ref output-bytes '(:pointer :uint8)))
+                   (lisp-bytes (unwind-protect
+                                  (copy-wav-pointer bytes-pointer bytes-length)
+                                (vv-bytes-free bytes-pointer))))
+              (values result lisp-bytes bytes-length))
             (values result nil 0))))))
 
 (defmacro call-json-output-function (function &rest args)
@@ -457,7 +457,7 @@
 (defmethod voicevox-synthesizer-synthesis ((self voicevox-class) audio-query-json style-id
                                            &optional options)
   (cffi:with-foreign-string (c-json audio-query-json)
-    (call-wav-output-function #'vv-synthesizer-synthesis
+    (call-bytes-output-function #'vv-synthesizer-synthesis
                               (synthesizer-pointer self)
                               c-json
                               style-id
@@ -465,7 +465,7 @@
 
 (defmethod voicevox-synthesizer-tts ((self voicevox-class) text style-id &optional options)
   (cffi:with-foreign-string (c-text text)
-    (call-wav-output-function #'vv-synthesizer-tts
+    (call-bytes-output-function #'vv-synthesizer-tts
                               (synthesizer-pointer self)
                               c-text
                               style-id
@@ -473,7 +473,7 @@
 
 (defmethod voicevox-synthesizer-tts-from-kana ((self voicevox-class) kana style-id &optional options)
   (cffi:with-foreign-string (c-kana kana)
-    (call-wav-output-function #'vv-synthesizer-tts-from-kana
+    (call-bytes-output-function #'vv-synthesizer-tts-from-kana
                               (synthesizer-pointer self)
                               c-kana
                               style-id
@@ -506,7 +506,7 @@
 
 (defmethod voicevox-synthesizer-frame-synthesis ((self voicevox-class) frame-audio-query-json style-id)
   (cffi:with-foreign-string (c-json frame-audio-query-json)
-    (call-wav-output-function #'vv-synthesizer-frame-synthesis
+    (call-bytes-output-function #'vv-synthesizer-frame-synthesis
                               (synthesizer-pointer self)
                               c-json
                               style-id)))
@@ -526,7 +526,6 @@
 
 (defmethod voicevox-synthesizer-streaming-synthesis ((self voicevox-class) audio-query-json style-id)
   (cffi:with-foreign-object (audio-feature-ptr-ptr '(:pointer (:pointer (:struct voicevox-audio-feature))))
-    (format t "prepare!~%")
     (unwind-protect
          (when (equal (voicevox-synthesizer-create-audio-feature
                        self
@@ -550,12 +549,11 @@
                                       0 ;; false
                                       slice-ptr)))
                    (cffi:with-foreign-objects ((output-pcm :pointer) (output-pcm-length :pointer))
-                     (let ((pcm-result (vv-synthesizer-render
-                                        (synthesizer-pointer self)
-                                        (cffi:mem-ref slice-ptr '(:struct voicevox-audio-feature-slice))
-                                        output-pcm-length
-                                        output-pcm)))
-                       (format t "pcm result: ~A~%" pcm-result)))))))))))
+                     (call-wav- vv-synthesizer-render
+                        (synthesizer-pointer self)
+                        (cffi:mem-ref slice-ptr '(:struct voicevox-audio-feature-slice))
+                        output-pcm-length
+                        output-pcm))))))))))
 
 (defclass voice-model-file-class ()
   ((voice-model-file-ptr
