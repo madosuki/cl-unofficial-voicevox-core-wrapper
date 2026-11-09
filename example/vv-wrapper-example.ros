@@ -90,7 +90,7 @@ exec ros -Q -- $0 "$@"
   (declare (ignorable argv))
   (let ((parsed (parse-option argv)))
     (unless parsed
-      (format t "require --text, --lib-core-path, --lib-onnxruntime-path, --open-jtalk-dict-dir-path and --vvm-path. --speaker-id and --output-file are optional.~%")
+      (format *error-output* "require --text, --lib-core-path, --lib-onnxruntime-path, --open-jtalk-dict-dir-path and --vvm-path. --speaker-id and --output-file are optional.~%")
       (return-from main nil))
     (let* ((text (cadr (member :text parsed)))
            (lib-core-path (cadr (member :lib-core-path parsed)))
@@ -99,12 +99,12 @@ exec ros -Q -- $0 "$@"
            (vvm-path (cadr (member :vvm-path parsed)))
            (output-file (cadr (member :output-file parsed)))
            (speaker-id (cadr (member :speaker-id parsed))))
-      (format t "onnxruntime lib path: ~A~%" lib-onnxruntime-path)
+      (format *error-output* "onnxruntime lib path: ~A~%" lib-onnxruntime-path)
       (with-open-libs lib-core-path
         (let ((onnxruntime (make-instance 'onnxruntime-class)))
           (cl-unofficial-voicevox-core-wrapper:onnxruntime-set-filename-to-options onnxruntime lib-onnxruntime-path)
           (require-ok (onnxruntime-init onnxruntime) "onnxruntime-init")
-          (format t "version: ~A~%" (cl-unofficial-voicevox-core-wrapper:get-version))
+          (format *error-output* "version: ~A~%" (cl-unofficial-voicevox-core-wrapper:get-version))
           (with-close (open-jtalk (open-jtalk-rc-close open-jtalk))
             (with-close (voice-model-file (voice-model-file-close voice-model-file))
               (with-close (voicevox (voicevox-synthesizer-delete voicevox))

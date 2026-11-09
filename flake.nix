@@ -26,9 +26,11 @@
               pkg-config
               libffi.dev
               stdenv.cc.cc.lib
+              libuv
             ];
 
             LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
+              pkgs.libuv
               pkgs.libffi
               pkgs.stdenv.cc.cc.lib
             ];

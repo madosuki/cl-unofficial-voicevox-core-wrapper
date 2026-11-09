@@ -500,15 +500,15 @@
   (audio-feature (:pointer (:struct voicevox-audio-feature)))
   (start-inclusive :uintptr)
   (end :uintptr)
-  (end-is-include :bool)
-  (clamp :bool)
-  (allow-start-exceeds-end :bool)
+  (end-is-include :uint8)
+  (clamp :uint8)
+  (allow-start-exceeds-end :uint8)
   (output (:pointer (:struct voicevox-audio-feature-slice))))
 
 (cffi:defcfun ("voicevox_audio_feature_slice_new" vv-audio-feature-slice-new) (:struct voicevox-audio-feature-slice)
   (audio-feature (:pointer (:struct voicevox-audio-feature)))
-  (clamp :bool)
-  (allow-start-exceeds-end :bool))
+  (clamp :uint8)
+  (allow-start-exceeds-end :uint8))
 
 (cffi:defcfun ("voicevox_audio_feature_slice_len" vv-audio-feature-slice-len) :int
   (audio-feature-slice (:struct voicevox-audio-feature-slice))
@@ -522,9 +522,9 @@
   (audio-feature-slice (:struct voicevox-audio-feature-slice))
   (start-inclusive :uintptr)
   (end :uintptr)
-  (end-is-inclusive :bool)
-  (clamp :bool)
-  (allow-start-exceeds-end :bool)
+  (end-is-inclusive :uint8)
+  (clamp :uint8)
+  (allow-start-exceeds-end :uint8)
   (output (:pointer (:struct voicevox-audio-feature-slice))))
 
 (cffi:defcfun ("voicevox_synthesizer_render" vv-synthesizer-render) :int

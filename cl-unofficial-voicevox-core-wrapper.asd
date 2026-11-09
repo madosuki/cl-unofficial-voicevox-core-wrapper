@@ -9,6 +9,7 @@
   :license "MIT"
   :depends-on ("cffi"
                "cffi-libffi"
+               "cl-async"
                "cl-unofficial-voicevox-core-wrapper-types")
   :components ((:module "src"
                 :components

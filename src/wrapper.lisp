@@ -270,7 +270,7 @@
 (defun call-bytes-output-function (function &rest args)
   (cffi:with-foreign-object (output-bytes-length :uintptr)
     (cffi:with-foreign-object (output-bytes '(:pointer :uint8))
-      (let ((result (apply function (append args (list output-bytes-length output-wav)))))
+      (let ((result (apply function (append args (list output-bytes-length output-bytes)))))
         (setf result (get-result-from-code result))
         (if (eq result :voicevox-result-ok)
             (let* ((bytes-length (cffi:mem-ref output-bytes-length :uintptr))
@@ -366,8 +366,8 @@
     :accessor synthesizer
     :initform (cffi:foreign-alloc '(:pointer (:struct voicevox-synthesizer))))
    (load-voice-model-options :accessor load-voice-model-options :initform (vv-make-default-load-voice-model-options))
-   (audio-query-frame-length-options :accessor voicevox-audio-query-frame-length-options :initform (vv-make-default-audio-query-frame-length-options))))
-
+   (audio-feature-ptr :accessor audio-feature-ptr :initform nil)
+   (segment-length-size :accessor segment-length-size :initform nil)))
 
 (defmethod voicevox-synthesizer-init ((self voicevox-class) onnxruntime-instance open-jtalk-instance)
   (get-result-from-code
@@ -536,24 +536,48 @@
                       :voicevox-result-ok)
            (let* ((feature-ptr (cffi:mem-ref audio-feature-ptr-ptr '(:pointer (:struct voicevox-audio-feature))))
                   (frame-rate (vv-get-frame-rate))
-                  (start 0)
-                  (width (vv-audio-feature-len feature-ptr)))
-             (let ((segment-length-seconds (round (* 0.3 frame-rate))))
-               (cffi:with-foreign-object (slice-ptr '(:struct voicevox-audio-feature-slice))
-                 (let ((slice-result (vv-audio-feature-slice
-                                      feature-ptr
-                                      start
-                                      segment-length-seconds
-                                      0 ;; false
-                                      0 ;; false
-                                      0 ;; false
-                                      slice-ptr)))
-                   (cffi:with-foreign-objects ((output-pcm :pointer) (output-pcm-length :pointer))
-                     (call-wav- vv-synthesizer-render
-                        (synthesizer-pointer self)
-                        (cffi:mem-ref slice-ptr '(:struct voicevox-audio-feature-slice))
-                        output-pcm-length
-                        output-pcm))))))))))
+                  (offset 0)
+                  (feature-len (vv-audio-feature-len feature-ptr)))
+             (let* ((segment-length-per-seconds (round (* 0.3 frame-rate)))
+                    (is-pending t))
+               (format t "segemtn length per seconds: ~A~%feture-len: ~A~%" segment-length-per-seconds feature-len)
+               (loop while (and is-pending (< offset feature-len))
+                     do
+                     (cffi:with-foreign-objects ((slice-ptr '(:struct voicevox-audio-feature-slice))
+                                                 (slice-len '(:pointer :uintptr))
+                                                 (sub-slice-ptr '(:struct voicevox-audio-feature-slice)))
+                       (let ((first-slice-result
+                              (get-result-from-code
+                               (vv-audio-feature-slice
+                                feature-ptr
+                                offset
+                                feature-len
+                                0
+                                0
+                                0
+                                slice-ptr))))
+                         (unless (equal first-slice-result :voicevox-result-ok)
+                           (format t "break loop: ~A~%" first-slice-result)
+                           (return-from voicevox-synthesizer-streaming-synthesis first-slice-result))
+                         (let ((second-slice-result
+                                (get-result-from-code
+                                 (vv-audio-feature-slice-slice
+                                  (cffi:mem-ref slice-ptr '(:struct voicevox-audio-feature-slice))
+                                  0
+                                  1
+                                  0
+                                  0
+                                  segment-length-per-seconds
+                                  sub-slice-ptr))))
+                           (unless (equal second-slice-result :voicevox-result-ok)
+                             (format t "break loop: ~A~%" second-slice-result)
+                             (return-from voicevox-synthesizer-streaming-synthesis second-slice-result))
+                           (multiple-value-bind (result bytes bytes-length)
+                               (call-bytes-output-function #'vv-synthesizer-render
+                                                           (synthesizer-pointer self)
+                                                           (cffi:mem-ref sub-slice-ptr '(:struct voicevox-audio-feature-slice)))
+                             (format t "result: ~A, bytes-length: ~A~%" result bytes-length)))
+                         (setq offset (+ offset segment-length-per-seconds)))))))))))
 
 (defclass voice-model-file-class ()
   ((voice-model-file-ptr
