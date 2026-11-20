@@ -554,8 +554,6 @@
                     (is-pending t)
                     (bytes-count 0)
                     (bytes-list nil))
-               (format t "outputSamplingRate: ~D~%" (gethash "outputSamplingRate" audio-query-json-object))
-               (format t "segemtn length per seconds: ~A~%feture-len: ~A~%" segment-length-per-seconds feature-len)
                (loop while (and is-pending (< offset feature-len))
                      do
                      (cffi:with-foreign-objects ((slice-ptr '(:struct voicevox-audio-feature-slice))
@@ -572,7 +570,6 @@
                                 0
                                 slice-ptr))))
                          (unless (equal first-slice-result :voicevox-result-ok)
-                           (format t "break loop: ~A~%" first-slice-result)
                            (return-from voicevox-synthesizer-streaming-synthesis first-slice-result))
                          (let ((second-slice-result
                                 (get-result-from-code
@@ -585,19 +582,14 @@
                                   0
                                   sub-slice-ptr))))
                            (unless (equal second-slice-result :voicevox-result-ok)
-                             (format t "break loop: ~A~%" second-slice-result)
                              (return-from voicevox-synthesizer-streaming-synthesis second-slice-result))
                            (multiple-value-bind (result bytes bytes-length)
                                (call-bytes-output-function #'vv-synthesizer-render
                                                            (synthesizer-pointer self)
                                                            (cffi:mem-ref sub-slice-ptr '(:struct voicevox-audio-feature-slice)))
-                             (format t "result: ~A, bytes-length: ~A~%" result bytes-length)
-                             (format t "bytes: ~A~%~%" bytes)
                              (setq bytes-count (+ bytes-count bytes-length))
                              (push (cons bytes bytes-length) bytes-list)))
-                         (setq offset (+ offset segment-length-per-seconds))
-                         (sleep 1))))
-               (format t "bytes-count: ~A~%" bytes-count)
+                         (setq offset (+ offset segment-length-per-seconds)))))
                (let ((final-bytes (concat-octets (reverse bytes-list) bytes-count)))
                  (cffi:with-foreign-object (c-arr :uint8 bytes-count)
                    (dotimes (x bytes-count)
