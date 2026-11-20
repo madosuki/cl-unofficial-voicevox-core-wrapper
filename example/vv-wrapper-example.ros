@@ -125,8 +125,12 @@ exec ros -Q -- $0 "$@"
                   (multiple-value-bind (result audio-query-json)
                       (voicevox-synthesizer-create-audio-query voicevox text speaker-id)
                     (require-ok result "voicevox-synthesizer-create-qudio-query")
-                    (voicevox-synthesizer-streaming-synthesis voicevox audio-query-json speaker-id)
-                    )
+                    (multiple-value-bind (wav-bytes wav-length)
+                        (voicevox-synthesizer-streaming-synthesis voicevox audio-query-json speaker-id)
+                      (format t "bytes-length: ~A~%" wav-length)
+                      (write-wav-file :filepath output-file
+                                      :wav-bytes wav-bytes
+                                      :wav-length wav-length)))
                   ;; (multiple-value-bind (result wav-bytes wav-length)
                   ;;     (voicevox-synthesizer-tts voicevox text speaker-id)
                   ;;   (require-ok result "voicevox-synthesizer-tts")

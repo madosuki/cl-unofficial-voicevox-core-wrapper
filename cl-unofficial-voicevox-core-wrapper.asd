@@ -10,6 +10,7 @@
   :depends-on ("cffi"
                "cffi-libffi"
                "cl-async"
+               "com.inuoe.jzon"
                "cl-unofficial-voicevox-core-wrapper-types")
   :components ((:module "src"
                 :components

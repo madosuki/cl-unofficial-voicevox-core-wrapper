@@ -524,22 +524,37 @@
       (let ((result (get-result-from-code result-code)))
         result))))
 
+(defun concat-octets (arrays total-size)
+  (let ((result (make-array total-size :element-type '(unsigned-byte 8)))
+        (pos 0))
+    (dolist (a arrays)
+      (let ((bytes-len (cdr a))
+            (bytes (car a)))
+        (dotimes (x bytes-len)
+          (setf (aref result pos) (aref bytes x))
+          (incf pos))))
+    result))
+
 (defmethod voicevox-synthesizer-streaming-synthesis ((self voicevox-class) audio-query-json style-id)
   (cffi:with-foreign-object (audio-feature-ptr-ptr '(:pointer (:pointer (:struct voicevox-audio-feature))))
-    (unwind-protect
-         (when (equal (voicevox-synthesizer-create-audio-feature
-                       self
-                       audio-query-json
-                       style-id
-                       (vv-make-default-audio-query-frame-length-options)
-                       audio-feature-ptr-ptr)
-                      :voicevox-result-ok)
-           (let* ((feature-ptr (cffi:mem-ref audio-feature-ptr-ptr '(:pointer (:struct voicevox-audio-feature))))
-                  (frame-rate (vv-get-frame-rate))
-                  (offset 0)
-                  (feature-len (vv-audio-feature-len feature-ptr)))
+    (when (equal (voicevox-synthesizer-create-audio-feature
+                  self
+                  audio-query-json
+                  style-id
+                  (vv-make-default-audio-query-frame-length-options)
+                  audio-feature-ptr-ptr)
+                 :voicevox-result-ok)
+      (let* ((feature-ptr (cffi:mem-ref audio-feature-ptr-ptr '(:pointer (:struct voicevox-audio-feature))))
+             (frame-rate (vv-get-frame-rate))
+             (offset 0)
+             (feature-len (vv-audio-feature-len feature-ptr))
+             (audio-query-json-object (com.inuoe.jzon:parse audio-query-json)))
+        (unwind-protect
              (let* ((segment-length-per-seconds (round (* 0.3 frame-rate)))
-                    (is-pending t))
+                    (is-pending t)
+                    (bytes-count 0)
+                    (bytes-list nil))
+               (format t "outputSamplingRate: ~D~%" (gethash "outputSamplingRate" audio-query-json-object))
                (format t "segemtn length per seconds: ~A~%feture-len: ~A~%" segment-length-per-seconds feature-len)
                (loop while (and is-pending (< offset feature-len))
                      do
@@ -564,10 +579,10 @@
                                  (vv-audio-feature-slice-slice
                                   (cffi:mem-ref slice-ptr '(:struct voicevox-audio-feature-slice))
                                   0
+                                  segment-length-per-seconds
+                                  0
                                   1
                                   0
-                                  0
-                                  segment-length-per-seconds
                                   sub-slice-ptr))))
                            (unless (equal second-slice-result :voicevox-result-ok)
                              (format t "break loop: ~A~%" second-slice-result)
@@ -576,8 +591,32 @@
                                (call-bytes-output-function #'vv-synthesizer-render
                                                            (synthesizer-pointer self)
                                                            (cffi:mem-ref sub-slice-ptr '(:struct voicevox-audio-feature-slice)))
-                             (format t "result: ~A, bytes-length: ~A~%" result bytes-length)))
-                         (setq offset (+ offset segment-length-per-seconds)))))))))))
+                             (format t "result: ~A, bytes-length: ~A~%" result bytes-length)
+                             (format t "bytes: ~A~%~%" bytes)
+                             (setq bytes-count (+ bytes-count bytes-length))
+                             (push (cons bytes bytes-length) bytes-list)))
+                         (setq offset (+ offset segment-length-per-seconds))
+                         (sleep 1))))
+               (format t "bytes-count: ~A~%" bytes-count)
+               (let ((final-bytes (concat-octets (reverse bytes-list) bytes-count)))
+                 (cffi:with-foreign-object (c-arr :uint8 bytes-count)
+                   (dotimes (x bytes-count)
+                     (setf (cffi:mem-aref c-arr :uint8 x) (aref final-bytes x)))
+                   (cffi:with-foreign-objects ((wav-bytes-ptr '(:pointer :uint8)) (wav-length-ptr :uintptr))
+                     (vv-wav-from-s16le
+                      bytes-count
+                      c-arr
+                      (gethash "outputSamplingRate" audio-query-json-object)
+                      nil
+                      wav-length-ptr
+                      wav-bytes-ptr)
+                     (let* ((wav-length (cffi:mem-ref wav-length-ptr :uintptr))
+                            (c-wav-bytes (cffi:mem-ref wav-bytes-ptr '(:pointer :uint8)))
+                            (wav-bytes (unwind-protect
+                                            (copy-wav-pointer c-wav-bytes wav-length)
+                                         (vv-bytes-free c-wav-bytes))))
+                       (values wav-bytes wav-length))))))
+          (vv-audio-feature-delete feature-ptr))))))
 
 (defclass voice-model-file-class ()
   ((voice-model-file-ptr
