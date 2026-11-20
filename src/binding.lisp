@@ -229,7 +229,7 @@
                     )
   (clamp :uint8 ;; correctly types is bool, but cffi bugs not passed bool in struct. therefore instead uint8. ref: https://github.com/cffi/cffi/issues/265
          )
-  (allow-start-exceeds-end :int))
+  (allow-start-exceeds-end :uint8))
 
 (cffi:defctype voicevox-voice-model-id (:pointer (:array :uint8 16)))
 (cffi:defctype voicevox-style-id :uint32)
@@ -507,8 +507,8 @@
 
 (cffi:defcfun ("voicevox_audio_feature_slice_new" vv-audio-feature-slice-new) (:struct voicevox-audio-feature-slice)
   (audio-feature (:pointer (:struct voicevox-audio-feature)))
-  (clamp :uint8)
-  (allow-start-exceeds-end :uint8))
+  (clamp :bool)
+  (allow-start-exceeds-end :bool))
 
 (cffi:defcfun ("voicevox_audio_feature_slice_len" vv-audio-feature-slice-len) :int
   (audio-feature-slice (:struct voicevox-audio-feature-slice))
